@@ -1,0 +1,103 @@
+import { useState } from 'react'
+import { Home, History, User, ChefHat } from 'lucide-react'
+import ScannerTab from './components/ScannerTab'
+import HistoryTab from './components/HistoryTab'
+import ProfileTab from './components/ProfileTab'
+import RecipesTab from './components/RecipesTab'
+
+function App() {
+  const [activeTab, setActiveTab] = useState('scanner')
+  const [scanHistory, setScanHistory] = useState([])
+  const [pantry, setPantry] = useState([])
+  const [recipes, setRecipes] = useState([])
+  const [ingredients, setIngredients] = useState(null)
+  const [imagePreview, setImagePreview] = useState(null)
+  const [preferences, setPreferences] = useState([
+    { id: 'vegetarian', name: 'Vegetarian', emoji: '🥬', description: 'No meat or fish', enabled: false },
+    { id: 'vegan', name: 'Vegan', emoji: '🌱', description: 'No animal products', enabled: false },
+    { id: 'glutenfree', name: 'Gluten-Free', emoji: '🌾', description: 'No gluten', enabled: false },
+    { id: 'dairyfree', name: 'Dairy-Free', emoji: '🥛', description: 'No dairy products', enabled: false },
+    { id: 'sweettooth', name: 'Sweet Tooth', emoji: '🍰', description: 'Love desserts', enabled: false },
+    { id: 'spicy', name: 'Spicy Food', emoji: '🌶️', description: 'Love spicy dishes', enabled: false },
+    { id: 'lowcarb', name: 'Low Carb', emoji: '🥩', description: 'Reduce carbohydrates', enabled: false },
+    { id: 'healthy', name: 'Healthy Eating', emoji: '💪', description: 'Nutritious meals', enabled: false },
+  ])
+
+  const addToHistory = (scan) => {
+    setScanHistory(prev => [scan, ...prev])
+  }
+
+  const tabs = [
+    { id: 'scanner', label: 'Scanner', icon: Home },
+    { id: 'recipes', label: 'Recipes', icon: ChefHat },
+    { id: 'history', label: 'History', icon: History },
+    { id: 'profile', label: 'Profile', icon: User },
+  ]
+
+  const renderTab = () => {
+    switch (activeTab) {
+      case 'scanner':
+        return (
+          <ScannerTab 
+            addToHistory={addToHistory} 
+            pantry={pantry} 
+            setPantry={setPantry}
+            ingredients={ingredients}
+            setIngredients={setIngredients}
+            imagePreview={imagePreview}
+            setImagePreview={setImagePreview}
+          />
+        )
+      case 'recipes':
+        return (
+          <RecipesTab 
+            pantry={pantry} 
+            preferences={preferences}
+            recipes={recipes}
+            setRecipes={setRecipes}
+          />
+        )
+      case 'history':
+        return <HistoryTab history={scanHistory} />
+      case 'profile':
+        return <ProfileTab preferences={preferences} setPreferences={setPreferences} />
+      default:
+        return <ScannerTab addToHistory={addToHistory} pantry={pantry} setPantry={setPantry} />
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-[#f2f2f7] flex flex-col max-w-md mx-auto relative">
+      <main className="flex-1 overflow-auto pb-20">
+        {renderTab()}
+      </main>
+
+      <nav className="fixed bottom-0 left-0 right-0 bg-white/80 ios-blur border-t border-gray-200 safe-area-bottom max-w-md mx-auto">
+        <div className="flex justify-around items-center h-16">
+          {tabs.map((tab) => {
+            const Icon = tab.icon
+            const isActive = activeTab === tab.id
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className="flex flex-col items-center justify-center flex-1 h-full transition-all duration-200"
+              >
+                <Icon
+                  size={24}
+                  className={isActive ? 'text-blue-500' : 'text-gray-400'}
+                  strokeWidth={isActive ? 2.5 : 2}
+                />
+                <span className={`text-xs mt-1 font-medium ${isActive ? 'text-blue-500' : 'text-gray-400'}`}>
+                  {tab.label}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      </nav>
+    </div>
+  )
+}
+
+export default App
