@@ -1,8 +1,70 @@
-import { useState } from 'react'
-import { User, Settings, Bell, HelpCircle, Shield, LogOut, ChevronRight, Camera, X } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { User, Settings, Bell, HelpCircle, Shield, ChevronRight, Camera, X } from 'lucide-react'
+
+function getScansToday() {
+  const stored = localStorage.getItem('scanUsage')
+  if (!stored) return 0
+  const { date, count } = JSON.parse(stored)
+  const today = new Date().toDateString()
+  return date === today ? count : 0
+}
 
 function ProfileTab({ preferences, setPreferences }) {
   const [selectedMenu, setSelectedMenu] = useState(null)
+  const [notifications, setNotifications] = useState({
+    recipes: true,
+    tips: true
+  })
+  const [settings, setSettings] = useState({
+    theme: 'Light',
+    units: 'Metric (g, ml)'
+  })
+  const [scansToday, setScansToday] = useState(getScansToday())
+
+  // Load settings and notifications from localStorage on mount
+  useEffect(() => {
+    try {
+      const storedSettings = localStorage.getItem('appSettings')
+      if (storedSettings) setSettings(JSON.parse(storedSettings))
+
+      const storedNotifications = localStorage.getItem('appNotifications')
+      if (storedNotifications) setNotifications(JSON.parse(storedNotifications))
+    } catch (error) {
+      console.warn('Error loading settings from localStorage:', error)
+    }
+    setScansToday(getScansToday())
+  }, [])
+
+  // Save settings to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('appSettings', JSON.stringify(settings))
+      // Apply theme to document
+      if (settings.theme === 'Dark') {
+        document.documentElement.classList.add('dark')
+      } else if (settings.theme === 'Light') {
+        document.documentElement.classList.remove('dark')
+      } else {
+        // Auto mode - check system preference
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          document.documentElement.classList.add('dark')
+        } else {
+          document.documentElement.classList.remove('dark')
+        }
+      }
+    } catch (error) {
+      console.warn('Error saving settings to localStorage:', error)
+    }
+  }, [settings])
+
+  // Save notifications to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('appNotifications', JSON.stringify(notifications))
+    } catch (error) {
+      console.warn('Error saving notifications to localStorage:', error)
+    }
+  }, [notifications])
 
   const menuItems = [
     { 
@@ -39,10 +101,14 @@ function ProfileTab({ preferences, setPreferences }) {
     }
   ]
 
+  useEffect(() => {
+    setScansToday(getScansToday())
+  }, [])
+
   const stats = [
-    { label: 'Scans', value: '0' },
-    { label: 'Saved', value: '0' },
-    { label: 'Recipes', value: '0' }
+    { label: 'Scans Today', value: scansToday.toString() },
+    { label: 'Recipes Found', value: '0' },
+    { label: 'Favorites', value: '0' }
   ]
 
   const togglePreference = (id) => {
@@ -69,8 +135,7 @@ function ProfileTab({ preferences, setPreferences }) {
           </div>
           <div className="flex-1">
             <h2 className="text-xl font-bold text-gray-900">Guest User</h2>
-            <p className="text-gray-500 text-sm">Sign in to save your data</p>
-            <button className="mt-2 text-blue-500 text-sm font-semibold active:opacity-70">Create Account</button>
+            <p className="text-gray-500 text-sm">Welcome to Recipee!</p>
           </div>
         </div>
 
@@ -135,11 +200,6 @@ function ProfileTab({ preferences, setPreferences }) {
         })}
       </div>
 
-      <button className="w-full bg-white rounded-2xl p-4 flex items-center justify-center gap-2 text-red-500 font-medium active:bg-gray-50 transition-colors">
-        <LogOut size={20} />
-        <span>Sign Out</span>
-      </button>
-
       <p className="text-center text-gray-400 text-xs mt-6">Recipee v1.0.0</p>
 
       {/* Menu Detail Modal */}
@@ -165,16 +225,22 @@ function ProfileTab({ preferences, setPreferences }) {
             {selectedMenu.id === 'notifications' && (
               <div className="space-y-3">
                 <label className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer">
-                  <input type="checkbox" defaultChecked className="w-4 h-4" />
+                  <input 
+                    type="checkbox" 
+                    checked={notifications.recipes}
+                    onChange={(e) => setNotifications({...notifications, recipes: e.target.checked})}
+                    className="w-4 h-4" 
+                  />
                   <span className="text-sm text-gray-700">Recipe recommendations</span>
                 </label>
                 <label className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer">
-                  <input type="checkbox" defaultChecked className="w-4 h-4" />
+                  <input 
+                    type="checkbox" 
+                    checked={notifications.tips}
+                    onChange={(e) => setNotifications({...notifications, tips: e.target.checked})}
+                    className="w-4 h-4" 
+                  />
                   <span className="text-sm text-gray-700">Cooking tips</span>
-                </label>
-                <label className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer">
-                  <input type="checkbox" className="w-4 h-4" />
-                  <span className="text-sm text-gray-700">Weekly digest</span>
                 </label>
               </div>
             )}
@@ -183,7 +249,11 @@ function ProfileTab({ preferences, setPreferences }) {
               <div className="space-y-3">
                 <div className="p-3 bg-gray-50 rounded-lg">
                   <p className="text-sm font-medium text-gray-900">Theme</p>
-                  <select className="w-full mt-2 p-2 border border-gray-200 rounded-lg text-sm">
+                  <select 
+                    value={settings.theme}
+                    onChange={(e) => setSettings({...settings, theme: e.target.value})}
+                    className="w-full mt-2 p-2 border border-gray-200 rounded-lg text-sm"
+                  >
                     <option>Light</option>
                     <option>Dark</option>
                     <option>Auto</option>
@@ -191,7 +261,11 @@ function ProfileTab({ preferences, setPreferences }) {
                 </div>
                 <div className="p-3 bg-gray-50 rounded-lg">
                   <p className="text-sm font-medium text-gray-900">Measurement Units</p>
-                  <select className="w-full mt-2 p-2 border border-gray-200 rounded-lg text-sm">
+                  <select 
+                    value={settings.units}
+                    onChange={(e) => setSettings({...settings, units: e.target.value})}
+                    className="w-full mt-2 p-2 border border-gray-200 rounded-lg text-sm"
+                  >
                     <option>Metric (g, ml)</option>
                     <option>Imperial (oz, cups)</option>
                   </select>
@@ -200,14 +274,25 @@ function ProfileTab({ preferences, setPreferences }) {
             )}
 
             {selectedMenu.id === 'help' && (
-              <div className="space-y-3">
-                <button className="w-full p-3 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-100">
-                  View FAQ
-                </button>
-                <button className="w-full p-3 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-100">
+              <div className="space-y-4">
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <p className="font-semibold text-gray-900 mb-2">Frequently Asked Questions</p>
+                  <div className="space-y-2 text-sm text-gray-700">
+                    <p><strong>Q: How do I scan ingredients?</strong><br/>A: Go to Scanner tab, take a photo, and the AI will detect ingredients.</p>
+                    <p><strong>Q: Can I manually add ingredients?</strong><br/>A: Yes, use the manual entry field in the Scanner tab.</p>
+                    <p><strong>Q: How many scans per day?</strong><br/>A: 5 scans daily. Tap Scanner title 7 times for admin mode (unlimited).</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => window.open('mailto:nirvaangoel2@gmail.com')}
+                  className="w-full p-3 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
+                >
                   Contact Support
                 </button>
-                <button className="w-full p-3 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-100">
+                <button 
+                  onClick={() => window.open('mailto:nirvaangoel2@gmail.com?subject=Bug Report')}
+                  className="w-full p-3 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors"
+                >
                   Report a Bug
                 </button>
               </div>

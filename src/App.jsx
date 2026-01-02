@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Home, History, User, ChefHat } from 'lucide-react'
 import ScannerTab from './components/ScannerTab'
 import HistoryTab from './components/HistoryTab'
@@ -22,6 +22,58 @@ function App() {
     { id: 'lowcarb', name: 'Low Carb', emoji: '🥩', description: 'Reduce carbohydrates', enabled: false },
     { id: 'healthy', name: 'Healthy Eating', emoji: '💪', description: 'Nutritious meals', enabled: false },
   ])
+
+  // Load data from localStorage on mount
+  useEffect(() => {
+    try {
+      const storedHistory = localStorage.getItem('scanHistory')
+      if (storedHistory) setScanHistory(JSON.parse(storedHistory))
+
+      const storedPantry = localStorage.getItem('pantry')
+      if (storedPantry) setPantry(JSON.parse(storedPantry))
+
+      const storedRecipes = localStorage.getItem('recipes')
+      if (storedRecipes) setRecipes(JSON.parse(storedRecipes))
+
+      const storedPreferences = localStorage.getItem('preferences')
+      if (storedPreferences) setPreferences(JSON.parse(storedPreferences))
+    } catch (error) {
+      console.warn('Error loading data from localStorage:', error)
+    }
+  }, [])
+
+  // Save data to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('scanHistory', JSON.stringify(scanHistory))
+    } catch (error) {
+      console.warn('Error saving scanHistory to localStorage:', error)
+    }
+  }, [scanHistory])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('pantry', JSON.stringify(pantry))
+    } catch (error) {
+      console.warn('Error saving pantry to localStorage:', error)
+    }
+  }, [pantry])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('recipes', JSON.stringify(recipes))
+    } catch (error) {
+      console.warn('Error saving recipes to localStorage:', error)
+    }
+  }, [recipes])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('preferences', JSON.stringify(preferences))
+    } catch (error) {
+      console.warn('Error saving preferences to localStorage:', error)
+    }
+  }, [preferences])
 
   const addToHistory = (scan) => {
     setScanHistory(prev => [scan, ...prev])

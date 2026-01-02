@@ -1,7 +1,22 @@
 import { useState } from 'react'
 import { ChefHat, Loader2, Clock, Users, Flame, Search, X, Filter, CheckCircle2, Circle } from 'lucide-react'
 
-const OPENROUTER_API_KEY = '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'
+const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY
+const DAILY_RECIPE_LIMIT = 5
+
+function getRecipeSearchesToday() {
+  const stored = localStorage.getItem('recipeUsage')
+  if (!stored) return 0
+  const { date, count } = JSON.parse(stored)
+  const today = new Date().toDateString()
+  return date === today ? count : 0
+}
+
+function incrementRecipeSearchesToday() {
+  const today = new Date().toDateString()
+  const current = getRecipeSearchesToday()
+  localStorage.setItem('recipeUsage', JSON.stringify({ date: today, count: current + 1 }))
+}
 
 function RecipeChecklist({ isOpen, steps, currentStep }) {
   if (!isOpen) return null
@@ -88,6 +103,7 @@ function RecipesTab({ pantry, preferences, recipes, setRecipes }) {
   const [almostRecipeInput, setAlmostRecipeInput] = useState('')
   const [almostRecipeResult, setAlmostRecipeResult] = useState(null)
   const [almostLoading, setAlmostLoading] = useState(false)
+  const [searchesRemaining, setSearchesRemaining] = useState(DAILY_RECIPE_LIMIT - getRecipeSearchesToday())
 
   const recipeSteps = [
     'Analyzing pantry...',
@@ -99,6 +115,11 @@ function RecipesTab({ pantry, preferences, recipes, setRecipes }) {
   const findRecipes = async () => {
     if (pantry.length === 0) {
       setError('Add ingredients to your pantry first')
+      return
+    }
+
+    if (searchesRemaining <= 0) {
+      setError('Daily recipe search limit reached (5/day). Try again tomorrow!')
       return
     }
 
@@ -129,7 +150,7 @@ function RecipesTab({ pantry, preferences, recipes, setRecipes }) {
       }
 
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 60000)
+      const timeoutId = setTimeout(() => controller.abort(), 90000)
 
       // Build preference constraints
       let prefConstraints = ''
@@ -162,18 +183,24 @@ function RecipesTab({ pantry, preferences, recipes, setRecipes }) {
             'X-Title': 'Recipee Recipe Finder'
           },
           body: JSON.stringify({
-            model: 'google/gemini-3-flash-preview',
-            max_tokens: 2500,
+            model: 'google/gemini-2.0-flash-001',
+            max_tokens: 4000,
             messages: [{
               role: 'user',
-              content: `I have these ingredients available: ${ingredientList}.${prefConstraints}${excludeIngredients}
+              content: `AVAILABLE INGREDIENTS (ONLY use these): ${ingredientList}${prefConstraints}${excludeIngredients}
 
-Suggest 8 delicious, tasty recipes. You can use any combination of the ingredients I have. You can also use common pantry staples like salt, oil, butter, eggs, milk, spices, etc. UNLESS I specified dietary restrictions above - then avoid those.
+CRITICAL RULES:
+1. ONLY suggest recipes using the ingredients listed above
+2. You MAY use common pantry staples: salt, pepper, oil, butter (be careful of how much), water,
+3. DO NOT suggest recipes that require ingredients NOT in the list above
+4. DO NOT suggest recipes that need items the user doesn't have
+5. You SHOULD create exactly 5 recipes with different meal types: breakfast, lunch, dinner, snack, and dessert. If you can't find 5 recipes for different meal types, return as many as you can. 
+6. Every ingredient in each recipe MUST be from the available list or common staples
 
-Focus on flavor combinations and cooking techniques that make the recipes taste AMAZING. Make as many recipes as possible (up to 8).
+Suggest exactly 5 delicious recipes using ONLY available ingredients. Each recipe must have a different meal type: one breakfast, one lunch, one dinner, one snack, and one dessert.
 
-Return ONLY a JSON array with DETAILED recipes:
-[{"name": "Recipe Name", "description": "Detailed description of what it is and why it tastes good", "time": "30 mins", "servings": "4", "difficulty": "Easy", "mealType": "Breakfast", "ingredients": ["2 cups ingredient1", "1 cup milk", "salt and pepper"], "tips": ["Cooking tip 1", "Flavor tip 2"], "steps": ["Detailed step 1", "Detailed step 2", "Detailed step 3"]}]`
+Return ONLY a JSON array:
+[{"name": "Recipe Name", "description": "Brief description", "time": "30 mins", "servings": "4", "difficulty": "Easy", "mealType": "Breakfast", "ingredients": ["2 cups item1", "1 cup item2"], "tips": ["Tip 1"], "steps": ["Step 1", "Step 2"]}]`
             }]
           })
         }),
@@ -196,6 +223,10 @@ Return ONLY a JSON array with DETAILED recipes:
       await new Promise(resolve => setTimeout(resolve, 500))
       setShowChecklist(false)
       setRecipes(parsedRecipes)
+
+      // Increment daily recipe search counter
+      incrementRecipeSearchesToday()
+      setSearchesRemaining(DAILY_RECIPE_LIMIT - getRecipeSearchesToday())
     } catch (err) {
       setShowChecklist(false)
       setError(err.name === 'AbortError' ? 'Request timed out.' : 'Failed to find recipes.')
@@ -274,8 +305,15 @@ If canMake is true, "need" should be empty. If false, list what's missing with q
       <RecipeChecklist isOpen={showChecklist} steps={recipeSteps} currentStep={currentStep} />
 
       <div className="safe-area-top pt-4 pb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Recipes</h1>
-        <p className="text-gray-500 mt-1">Discover recipes with your ingredients</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Recipes</h1>
+            <p className="text-gray-500 mt-1">Discover recipes with your ingredients</p>
+          </div>
+          <div className="bg-orange-100 text-orange-700 px-4 py-2 rounded-full font-semibold text-sm">
+            {searchesRemaining}/5 searches
+          </div>
+        </div>
       </div>
 
       {pantry.length === 0 ? (
@@ -440,7 +478,7 @@ If canMake is true, "need" should be empty. If false, list what's missing with q
                   <div>
                     <p className="text-sm font-medium text-gray-700 mb-2">Meal Type</p>
                     <div className="flex gap-2">
-                      {['all', 'breakfast', 'lunch', 'dinner'].map(meal => (
+                      {['all', 'breakfast', 'lunch', 'dinner', 'snack', 'dessert'].map(meal => (
                         <button
                           key={meal}
                           onClick={() => setFilterMealType(meal)}
@@ -489,7 +527,9 @@ If canMake is true, "need" should be empty. If false, list what's missing with q
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         recipe.mealType?.toLowerCase() === 'breakfast' ? 'bg-yellow-100 text-yellow-700' :
                         recipe.mealType?.toLowerCase() === 'lunch' ? 'bg-blue-100 text-blue-700' :
-                        recipe.mealType?.toLowerCase() === 'dinner' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'
+                        recipe.mealType?.toLowerCase() === 'dinner' ? 'bg-purple-100 text-purple-700' :
+                        recipe.mealType?.toLowerCase() === 'snack' ? 'bg-green-100 text-green-700' :
+                        recipe.mealType?.toLowerCase() === 'dessert' ? 'bg-pink-100 text-pink-700' : 'bg-gray-100 text-gray-700'
                       }`}>
                         {recipe.mealType || 'Other'}
                       </span>

@@ -1,7 +1,43 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Camera, Upload, Loader2, Sparkles, X, Check, Plus } from 'lucide-react'
 
-const OPENROUTER_API_KEY = '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'
+const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY
+const DAILY_SCAN_LIMIT = 5
+
+function getScansToday() {
+  try {
+    const stored = localStorage.getItem('scanUsage')
+    if (!stored) return 0
+    const { date, count } = JSON.parse(stored)
+    const today = new Date().toDateString()
+    return date === today ? count : 0
+  } catch (error) {
+    console.warn('localStorage scanUsage error:', error)
+    return 0
+  }
+}
+
+function incrementScansToday() {
+  try {
+    const today = new Date().toDateString()
+    const current = getScansToday()
+    localStorage.setItem('scanUsage', JSON.stringify({ date: today, count: current + 1 }))
+  } catch (error) {
+    console.warn('localStorage incrementScansToday error:', error)
+  }
+}
+
+const COMMON_INGREDIENTS = [
+  'Tomato', 'Onion', 'Garlic', 'Chicken', 'Beef', 'Pork', 'Fish', 'Salmon',
+  'Lettuce', 'Spinach', 'Broccoli', 'Carrot', 'Potato', 'Rice', 'Pasta',
+  'Milk', 'Lemon Zest', 'Orange Zest','Cheese', 'Eggs', 'Bread', 'Flour', 'Sugar', 'Salt',
+  'Pepper', 'Oil', 'Olive Oil', 'Vinegar', 'Soy Sauce', 'Honey', 'Lemon',
+  'Lime', 'Apple', 'Banana', 'Orange', 'Strawberry', 'Blueberry', 'Cucumber',
+  'Bell Pepper', 'Mushroom', 'Zucchini', 'Eggplant', 'Cabbage', 'Celery',
+  'Beans', 'Lentils', 'Chickpeas', 'Tofu', 'Yogurt', 'Cream', 'Basil',
+  'Oregano', 'Thyme', 'Rosemary', 'Cumin', 'Paprika', 'Cinnamon', 'Vanilla',
+  'Baking Powder', 'Baking Soda', 'Yeast', 'Nuts', 'Almonds', 'Walnuts', 'Coconut', 'Avocado', 'Corn', 'Peas', 'Green Beans'
+]
 
 function ScannerTab({ addToHistory, pantry, setPantry, ingredients, setIngredients, imagePreview, setImagePreview }) {
   const [image, setImage] = useState(null)
@@ -10,8 +46,73 @@ function ScannerTab({ addToHistory, pantry, setPantry, ingredients, setIngredien
   const [showScanning, setShowScanning] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
   const [manualInput, setManualInput] = useState('')
+  const [autocompleteSuggestions, setAutocompleteSuggestions] = useState([])
+  const [scansRemaining, setScansRemaining] = useState(DAILY_SCAN_LIMIT - getScansToday())
+  const [uncertainIngredients, setUncertainIngredients] = useState([])
+  const [showConfirmation, setShowConfirmation] = useState(false)
+  const [confirmedIngredients, setConfirmedIngredients] = useState([])
+  const [adminMode, setAdminMode] = useState(false)
+  const [tapCount, setTapCount] = useState(0)
+  const [showAdminPassword, setShowAdminPassword] = useState(false)
+  const [adminPassword, setAdminPassword] = useState('')
+  const [passwordError, setPasswordError] = useState('')
+  const tapTimeoutRef = useRef(null)
   const fileInputRef = useRef(null)
   const cameraInputRef = useRef(null)
+
+  const handleTitleTap = () => {
+    setTapCount(prev => {
+      const newCount = prev + 1
+      console.log('Tap count:', newCount)
+      
+      if (tapTimeoutRef.current) clearTimeout(tapTimeoutRef.current)
+      
+      if (newCount >= 7) {
+        console.log('Admin password triggered!')
+        setShowAdminPassword(true)
+        setAdminPassword('')
+        setPasswordError('')
+        return 0
+      }
+      
+      tapTimeoutRef.current = setTimeout(() => {
+        setTapCount(0)
+      }, 2000)
+      
+      return newCount
+    })
+  }
+
+  const handleAdminPasswordSubmit = () => {
+    if (adminPassword === 'Cookwell1') {
+      const newAdminMode = !adminMode
+      setAdminMode(newAdminMode)
+      try {
+        if (newAdminMode) {
+          localStorage.setItem('adminMode', 'true')
+        } else {
+          localStorage.removeItem('adminMode')
+        }
+      } catch (error) {
+        console.warn('localStorage adminMode error:', error)
+      }
+      setShowAdminPassword(false)
+      setAdminPassword('')
+      setPasswordError('')
+    } else {
+      setPasswordError('Incorrect password')
+      setAdminPassword('')
+    }
+  }
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('adminMode')
+      if (stored === 'true') setAdminMode(true)
+    } catch (error) {
+      console.warn('localStorage adminMode load error:', error)
+    }
+  }, [])
 
   const scanSteps = [
     'Processing image...',
@@ -77,6 +178,11 @@ function ScannerTab({ addToHistory, pantry, setPantry, ingredients, setIngredien
   const scanIngredients = async () => {
     if (!imagePreview) return
 
+    if (scansRemaining <= 0 && !adminMode) {
+      setError('Daily scan limit reached (5/day). Try again tomorrow!')
+      return
+    }
+
     setLoading(true)
     setError(null)
     setShowScanning(true)
@@ -114,13 +220,12 @@ function ScannerTab({ addToHistory, pantry, setPantry, ingredients, setIngredien
                   type: 'text',
                   text: `Identify EVERY food item in this image. CRITICAL RULES:
 1. If it's a PREPARED/COOKED DISH (cake, pizza, burger, sandwich, soup, pancakes, pasta, etc), list it AS-IS. DO NOT break it down into ingredients.
-   - Example: "Chocolate Cake" NOT "flour, eggs, butter"
-   - Example: "Chocolate Cake Pancakes" NOT "pancake batter, chocolate"
 2. If it's RAW INGREDIENTS (vegetables, fruits, raw meat, spices), list each one.
 3. Capitalize first letter of each item.
+4. Add "confident": true if you're sure about the item, "confident": false if you're unsure or guessing.
 
 Return ONLY this JSON (no markdown, no extra text):
-{"ingredients": [{"Name": "Item1", "Quantity": "1"}, {"Name": "Item2", "Quantity": "1"}]}`
+{"ingredients": [{"Name": "Item1", "Quantity": "1", "confident": true}, {"Name": "Item2", "Quantity": "1", "confident": false}]}`
                 },
                 {
                   type: 'image_url',
@@ -173,47 +278,46 @@ Return ONLY this JSON (no markdown, no extra text):
         let jsonStr = fullText
         jsonStr = jsonStr.replace(/```json\n?/g, '').replace(/```\n?/g, '')
         
-        const ingredients = []
+        const allIngredients = []
         
-        const patterns = [
-          /\{\s*"Name"\s*:\s*"([^"]+)"\s*,\s*"Quantity"\s*:\s*"([^"]+)"\s*\}/gi,
-          /\{\s*"name"\s*:\s*"([^"]+)"\s*,\s*"quantity"\s*:\s*"([^"]+)"\s*\}/gi,
-          /\{\s*"Quantity"\s*:\s*"([^"]+)"\s*,\s*"Name"\s*:\s*"([^"]+)"\s*\}/gi,
-          /\{\s*"quantity"\s*:\s*"([^"]+)"\s*,\s*"name"\s*:\s*"([^"]+)"\s*\}/gi,
-        ]
+        // Try to parse JSON with confidence field
+        const jsonMatch = jsonStr.match(/\{[\s\S]*"ingredients"\s*:\s*\[[\s\S]*\][\s\S]*\}/)
+        if (jsonMatch) {
+          try {
+            const cleanJson = jsonMatch[0].replace(/,\s*]/g, ']').replace(/,\s*}/g, '}')
+            const parsed = JSON.parse(cleanJson)
+            if (parsed.ingredients && Array.isArray(parsed.ingredients)) {
+              for (const ing of parsed.ingredients) {
+                allIngredients.push({
+                  name: ing.name || ing.Name || 'Unknown',
+                  quantity: ing.quantity || ing.Quantity || '1',
+                  confident: ing.confident !== false // Default to true if not specified
+                })
+              }
+            }
+          } catch {}
+        }
         
-        for (const pattern of patterns) {
-          let match
-          while ((match = pattern.exec(jsonStr)) !== null) {
-            const isReversed = pattern.source.includes('"Quantity"') && pattern.source.indexOf('"Quantity"') < pattern.source.indexOf('"Name"')
-            const name = isReversed ? match[2] : match[1]
-            const quantity = isReversed ? match[1] : match[2]
-            
-            if (!ingredients.some(ing => ing.name.toLowerCase() === name.toLowerCase())) {
-              ingredients.push({ name, quantity })
+        // Fallback regex parsing if JSON parse failed
+        if (allIngredients.length === 0) {
+          const patterns = [
+            /\{\s*"Name"\s*:\s*"([^"]+)"\s*,\s*"Quantity"\s*:\s*"([^"]+)"/gi,
+            /\{\s*"name"\s*:\s*"([^"]+)"\s*,\s*"quantity"\s*:\s*"([^"]+)"/gi,
+          ]
+          
+          for (const pattern of patterns) {
+            let match
+            while ((match = pattern.exec(jsonStr)) !== null) {
+              const name = match[1]
+              const quantity = match[2]
+              if (!allIngredients.some(ing => ing.name.toLowerCase() === name.toLowerCase())) {
+                allIngredients.push({ name, quantity, confident: true })
+              }
             }
           }
         }
         
-        if (ingredients.length === 0) {
-          const jsonMatch = jsonStr.match(/\{[\s\S]*"ingredients"\s*:\s*\[[\s\S]*\][\s\S]*\}/)
-          if (jsonMatch) {
-            try {
-              const cleanJson = jsonMatch[0].replace(/,\s*]/g, ']').replace(/,\s*}/g, '}')
-              const parsed = JSON.parse(cleanJson)
-              if (parsed.ingredients && Array.isArray(parsed.ingredients)) {
-                for (const ing of parsed.ingredients) {
-                  ingredients.push({
-                    name: ing.name || ing.Name || 'Unknown',
-                    quantity: ing.quantity || ing.Quantity || '1'
-                  })
-                }
-              }
-            } catch {}
-          }
-        }
-        
-        const filtered = ingredients.filter(
+        const filtered = allIngredients.filter(
           ing => ing.name && 
                  ing.name.toLowerCase() !== 'food' && 
                  ing.name !== 'Unknown' &&
@@ -221,7 +325,18 @@ Return ONLY this JSON (no markdown, no extra text):
         )
         
         if (filtered.length > 0) {
-          parsedIngredients = { ingredients: filtered }
+          // Separate confident and uncertain ingredients
+          const confidentItems = filtered.filter(ing => ing.confident)
+          const uncertainItems = filtered.filter(ing => !ing.confident)
+          
+          parsedIngredients = { ingredients: confidentItems.map(({ name, quantity }) => ({ name, quantity })) }
+          
+          // If there are uncertain ingredients, show confirmation popup
+          if (uncertainItems.length > 0) {
+            setUncertainIngredients(uncertainItems)
+            setConfirmedIngredients([])
+            setShowConfirmation(true)
+          }
         } else {
           throw new Error('No valid ingredients found')
         }
@@ -231,6 +346,10 @@ Return ONLY this JSON (no markdown, no extra text):
       }
 
       setIngredients(parsedIngredients)
+
+      // Increment daily scan counter
+      incrementScansToday()
+      setScansRemaining(DAILY_SCAN_LIMIT - getScansToday())
 
       addToHistory({
         id: Date.now(),
@@ -266,18 +385,70 @@ Return ONLY this JSON (no markdown, no extra text):
 
   const isIngredientStored = (name) => pantry.some(p => p.name.toLowerCase() === name.toLowerCase())
 
+  const handleManualInputChange = (value) => {
+    setManualInput(value)
+    
+    if (value.trim().length === 0) {
+      setAutocompleteSuggestions([])
+      return
+    }
+    
+    const lowerValue = value.toLowerCase()
+    const matches = COMMON_INGREDIENTS.filter(ing => 
+      ing.toLowerCase().startsWith(lowerValue) && 
+      !pantry.some(p => p.name.toLowerCase() === ing.toLowerCase())
+    ).slice(0, 5)
+    
+    setAutocompleteSuggestions(matches)
+  }
+
+  const selectSuggestion = (suggestion) => {
+    setManualInput(suggestion)
+    setAutocompleteSuggestions([])
+  }
+
   const addManualIngredient = () => {
     if (!manualInput.trim()) return
     const newIngredient = { name: manualInput.trim(), quantity: '1' }
     addToPantry(newIngredient)
     setManualInput('')
+    setAutocompleteSuggestions([])
+  }
+
+  const handleConfirmIngredient = (ingredient) => {
+    setConfirmedIngredients(prev => [...prev, ingredient])
+    setUncertainIngredients(prev => prev.filter(ing => ing.name !== ingredient.name))
+  }
+
+  const handleRejectIngredient = (ingredient) => {
+    setUncertainIngredients(prev => prev.filter(ing => ing.name !== ingredient.name))
+  }
+
+  const handleFinishConfirmation = () => {
+    // Add confirmed uncertain ingredients to the main ingredients list
+    if (confirmedIngredients.length > 0) {
+      const newIngredients = confirmedIngredients.map(({ name, quantity }) => ({ name, quantity }))
+      setIngredients(prev => ({
+        ingredients: [...(prev?.ingredients || []), ...newIngredients]
+      }))
+    }
+    setShowConfirmation(false)
+    setUncertainIngredients([])
+    setConfirmedIngredients([])
   }
 
   return (
     <div className="p-4">
       <div className="safe-area-top pt-4 pb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Scanner</h1>
-        <p className="text-gray-500 mt-1">Identify ingredients from photos</p>
+        <div className="flex items-center justify-between">
+          <div onClick={handleTitleTap} className="cursor-pointer select-none">
+            <h1 className="text-3xl font-bold text-gray-900">Scanner</h1>
+            <p className="text-gray-500 mt-1">Identify ingredients from photos</p>
+          </div>
+          <div className={`px-4 py-2 rounded-full font-semibold text-sm ${adminMode ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+            {adminMode ? '∞ Admin' : `${scansRemaining}/5 scans`}
+          </div>
+        </div>
       </div>
 
       {!imagePreview ? (
@@ -303,21 +474,38 @@ Return ONLY this JSON (no markdown, no extra text):
           {/* Manual Ingredient Entry */}
           <div className="bg-white rounded-2xl p-4">
             <h3 className="font-semibold text-gray-900 mb-3">Add Ingredient Manually</h3>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={manualInput}
-                onChange={(e) => setManualInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && addManualIngredient()}
-                placeholder="e.g., Tomato, Chicken..."
-                className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <button
-                onClick={addManualIngredient}
-                className="bg-blue-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-600 active:bg-blue-700"
-              >
-                <Plus size={18} />
-              </button>
+            <div className="relative">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={manualInput}
+                  onChange={(e) => handleManualInputChange(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && addManualIngredient()}
+                  placeholder="e.g., Tomato, Chicken..."
+                  className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  onClick={addManualIngredient}
+                  className="bg-blue-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-600 active:bg-blue-700"
+                >
+                  <Plus size={18} />
+                </button>
+              </div>
+              
+              {/* Autocomplete Suggestions */}
+              {autocompleteSuggestions.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                  {autocompleteSuggestions.map((suggestion, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => selectSuggestion(suggestion)}
+                      className="w-full text-left px-3 py-2 hover:bg-blue-50 text-sm text-gray-700 border-b border-gray-100 last:border-b-0 transition-colors"
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -467,6 +655,124 @@ Return ONLY this JSON (no markdown, no extra text):
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Uncertain Ingredients Confirmation Modal */}
+      {showConfirmation && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl max-h-[80vh] overflow-y-auto">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-3xl">🤔</span>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900">Not Sure About These</h3>
+              <p className="text-gray-500 text-sm mt-1">Do you have these items?</p>
+              
+              <button
+                onClick={() => {
+                  setShowConfirmation(false)
+                  setUncertainIngredients([])
+                  setConfirmedIngredients([])
+                }}
+                className="mt-4 text-sm text-blue-600 hover:text-blue-700 font-semibold underline"
+              >
+                Let AI decide
+              </button>
+            </div>
+
+            {uncertainIngredients.length > 0 ? (
+              <div className="space-y-3 mb-6">
+                {uncertainIngredients.map((item, index) => (
+                  <div key={index} className="flex items-center justify-between p-4 bg-yellow-50 rounded-xl border border-yellow-200">
+                    <div>
+                      <h4 className="font-semibold text-gray-900">{item.name}</h4>
+                      <p className="text-xs text-yellow-600">AI is unsure</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleRejectIngredient(item)}
+                        className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
+                      >
+                        <X size={20} />
+                      </button>
+                      <button
+                        onClick={() => handleConfirmIngredient(item)}
+                        className="p-2 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition-colors"
+                      >
+                        <Check size={20} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-4 mb-6">
+                <p className="text-gray-500">All items reviewed!</p>
+                {confirmedIngredients.length > 0 && (
+                  <p className="text-green-600 text-sm mt-1">
+                    ✓ {confirmedIngredients.length} item{confirmedIngredients.length !== 1 ? 's' : ''} confirmed
+                  </p>
+                )}
+              </div>
+            )}
+
+            <button
+              onClick={handleFinishConfirmation}
+              className="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-2xl p-4 font-semibold hover:shadow-lg transition-shadow"
+            >
+              {uncertainIngredients.length > 0 ? 'Skip Remaining' : 'Done'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Admin Mode Password Modal */}
+      {showAdminPassword && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-3xl">🔐</span>
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900">Admin Mode</h3>
+              <p className="text-gray-500 text-sm mt-1">Enter password to unlock</p>
+            </div>
+
+            <div className="space-y-4">
+              <input
+                type="password"
+                value={adminPassword}
+                onChange={(e) => setAdminPassword(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleAdminPasswordSubmit()}
+                placeholder="Enter password"
+                className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
+                autoFocus
+              />
+              
+              {passwordError && (
+                <p className="text-red-500 text-sm text-center font-medium">{passwordError}</p>
+              )}
+
+              <button
+                onClick={handleAdminPasswordSubmit}
+                className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-2xl p-3 font-semibold hover:shadow-lg transition-shadow"
+              >
+                Unlock Admin Mode
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowAdminPassword(false)
+                  setAdminPassword('')
+                  setPasswordError('')
+                }}
+                className="w-full bg-gray-100 text-gray-900 rounded-2xl p-3 font-semibold hover:bg-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
