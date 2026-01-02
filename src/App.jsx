@@ -5,7 +5,6 @@ import HistoryTab from './components/HistoryTab'
 import ProfileTab from './components/ProfileTab'
 import RecipesTab from './components/RecipesTab'
 import Onboarding from './components/Onboarding'
-import Auth from './components/Auth'
 
 function App() {
   const [activeTab, setActiveTab] = useState('scanner')
@@ -17,7 +16,6 @@ function App() {
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [userName, setUserName] = useState('')
   const [selectedMenu, setSelectedMenu] = useState(null)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [preferences, setPreferences] = useState([
     { id: 'vegetarian', name: 'Vegetarian', emoji: '🥬', description: 'No meat or fish', enabled: false },
     { id: 'vegan', name: 'Vegan', emoji: '🌱', description: 'No animal products', enabled: false },
@@ -29,10 +27,8 @@ function App() {
     { id: 'healthy', name: 'Healthy Eating', emoji: '💪', description: 'Nutritious meals', enabled: false },
   ])
 
-  // Check if onboarding should be shown (only after authentication)
+  // Check if onboarding should be shown
   useEffect(() => {
-    if (!isAuthenticated) return // Don't check onboarding until authenticated
-    
     try {
       const hasCompletedOnboarding = localStorage.getItem('hasCompletedOnboarding')
       const storedUserName = localStorage.getItem('userName')
@@ -47,12 +43,10 @@ function App() {
     } catch (error) {
       console.warn('Error checking onboarding status:', error)
     }
-  }, [isAuthenticated])
+  }, [])
 
-  // Load data from localStorage on mount (only after authentication)
+  // Load data from localStorage on mount
   useEffect(() => {
-    if (!isAuthenticated) return // Don't load data until authenticated
-    
     try {
       const storedHistory = localStorage.getItem('scanHistory')
       if (storedHistory) setScanHistory(JSON.parse(storedHistory))
@@ -68,7 +62,7 @@ function App() {
     } catch (error) {
       console.warn('Error loading data from localStorage:', error)
     }
-  }, [isAuthenticated])
+  }, [])
 
   // Save data to localStorage whenever it changes
   useEffect(() => {
@@ -133,10 +127,6 @@ function App() {
     setShowOnboarding(true)
   }
 
-  const handleAuthenticated = () => {
-    setIsAuthenticated(true)
-  }
-
   const tabs = [
     { id: 'scanner', label: 'Scanner', icon: Home },
     { id: 'recipes', label: 'Recipes', icon: ChefHat },
@@ -178,52 +168,42 @@ function App() {
 
   return (
     <div className="min-h-screen bg-[#f2f2f7] flex flex-col max-w-md mx-auto relative">
-      {/* Authentication Overlay */}
-      {!isAuthenticated && (
-        <Auth onAuthenticated={handleAuthenticated} />
-      )}
-
-      {/* Onboarding Overlay - Only show if authenticated */}
-      {isAuthenticated && showOnboarding && (
+      {/* Onboarding Overlay */}
+      {showOnboarding && (
         <Onboarding 
           onComplete={handleOnboardingComplete}
           onSkip={handleOnboardingSkip}
         />
       )}
 
-      {/* Main App - Only show if authenticated and not onboarding */}
-      {isAuthenticated && !showOnboarding && (
-        <>
-          <main className="flex-1 overflow-auto pb-20">
-            {renderTab()}
-          </main>
+      <main className="flex-1 overflow-auto pb-20">
+        {renderTab()}
+      </main>
 
-          <nav className="fixed bottom-0 left-0 right-0 bg-white/80 ios-blur border-t border-gray-200 safe-area-bottom max-w-md mx-auto">
-            <div className="flex justify-around items-center h-16">
-              {tabs.map((tab) => {
-                const Icon = tab.icon
-                const isActive = activeTab === tab.id
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className="flex flex-col items-center justify-center flex-1 h-full transition-all duration-200"
-                  >
-                    <Icon
-                      size={24}
-                      className={isActive ? 'text-blue-500' : 'text-gray-400'}
-                      strokeWidth={isActive ? 2.5 : 2}
-                    />
-                    <span className={`text-xs mt-1 font-medium ${isActive ? 'text-blue-500' : 'text-gray-400'}`}>
-                      {tab.label}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-          </nav>
-        </>
-      )}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white/80 ios-blur border-t border-gray-200 safe-area-bottom max-w-md mx-auto">
+        <div className="flex justify-around items-center h-16">
+          {tabs.map((tab) => {
+            const Icon = tab.icon
+            const isActive = activeTab === tab.id
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className="flex flex-col items-center justify-center flex-1 h-full transition-all duration-200"
+              >
+                <Icon
+                  size={24}
+                  className={isActive ? 'text-blue-500' : 'text-gray-400'}
+                  strokeWidth={isActive ? 2.5 : 2}
+                />
+                <span className={`text-xs mt-1 font-medium ${isActive ? 'text-blue-500' : 'text-gray-400'}`}>
+                  {tab.label}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      </nav>
     </div>
   )
 }

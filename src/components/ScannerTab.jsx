@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react'
 import { Camera, Upload, Loader2, Sparkles, X, Check, Plus } from 'lucide-react'
 
 const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY
-const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD
 const DAILY_SCAN_LIMIT = 5
 
 function getScansToday() {
@@ -85,7 +84,7 @@ function ScannerTab({ addToHistory, pantry, setPantry, ingredients, setIngredien
   }
 
   const handleAdminPasswordSubmit = () => {
-    if (adminPassword === ADMIN_PASSWORD) {
+    if (adminPassword === 'Cookwell1') {
       const newAdminMode = !adminMode
       setAdminMode(newAdminMode)
       try {
@@ -101,7 +100,8 @@ function ScannerTab({ addToHistory, pantry, setPantry, ingredients, setIngredien
       setAdminPassword('')
       setPasswordError('')
     } else {
-      setPasswordError('Invalid password')
+      setPasswordError('Incorrect password')
+      setAdminPassword('')
     }
   }
 
