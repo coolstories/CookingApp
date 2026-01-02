@@ -27,6 +27,79 @@ body {
   color: #000000 !important;
 }
 
+/* Dark mode for pantry labels and badges */
+.dark .bg-blue-100 {
+  background-color: #1a1a2e !important;
+}
+
+.dark .bg-blue-100 .text-blue-700 {
+  color: #ffffff !important;
+}
+
+.dark .bg-orange-100 {
+  background-color: #2a1a00 !important;
+}
+
+.dark .bg-orange-100 .text-orange-700 {
+  color: #ffffff !important;
+}
+
+/* Dark mode for search counter */
+.dark .bg-orange-100 {
+  background-color: #1a1a00 !important;
+}
+
+.dark .bg-orange-100 .text-orange-700 {
+  color: #ffffff !important;
+}
+
+/* Dark mode for all badge text */
+.dark .text-blue-700 {
+  color: #ffffff !important;
+}
+
+.dark .text-orange-700 {
+  color: #ffffff !important;
+}
+
+.dark .text-yellow-700 {
+  color: #ffffff !important;
+}
+
+.dark .text-purple-700 {
+  color: #ffffff !important;
+}
+
+.dark .text-green-700 {
+  color: #ffffff !important;
+}
+
+.dark .text-pink-700 {
+  color: #ffffff !important;
+}
+
+/* Dark mode for pantry item labels */
+.dark .bg-blue-100 {
+  background-color: #0f3460 !important;
+  border: 1px solid #16537e !important;
+}
+
+.dark .text-blue-700 {
+  color: #e8f4fd !important;
+  font-weight: 500 !important;
+}
+
+/* Dark mode for search counter in top right */
+.dark .bg-orange-100 {
+  background-color: #d35400 !important;
+  border: 1px solid #e67e22 !important;
+}
+
+.dark .text-orange-700 {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
 .dark .bg-white {
   background-color: #000000 !important;
 }
