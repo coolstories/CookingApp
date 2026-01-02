@@ -4,6 +4,7 @@ import ScannerTab from './components/ScannerTab'
 import HistoryTab from './components/HistoryTab'
 import ProfileTab from './components/ProfileTab'
 import RecipesTab from './components/RecipesTab'
+import Onboarding from './components/Onboarding'
 
 function App() {
   const [activeTab, setActiveTab] = useState('scanner')
@@ -12,6 +13,9 @@ function App() {
   const [recipes, setRecipes] = useState([])
   const [ingredients, setIngredients] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
+  const [showOnboarding, setShowOnboarding] = useState(false)
+  const [userName, setUserName] = useState('')
+  const [selectedMenu, setSelectedMenu] = useState(null)
   const [preferences, setPreferences] = useState([
     { id: 'vegetarian', name: 'Vegetarian', emoji: '🥬', description: 'No meat or fish', enabled: false },
     { id: 'vegan', name: 'Vegan', emoji: '🌱', description: 'No animal products', enabled: false },
@@ -22,6 +26,24 @@ function App() {
     { id: 'lowcarb', name: 'Low Carb', emoji: '🥩', description: 'Reduce carbohydrates', enabled: false },
     { id: 'healthy', name: 'Healthy Eating', emoji: '💪', description: 'Nutritious meals', enabled: false },
   ])
+
+  // Check if onboarding should be shown
+  useEffect(() => {
+    try {
+      const hasCompletedOnboarding = localStorage.getItem('hasCompletedOnboarding')
+      const storedUserName = localStorage.getItem('userName')
+      
+      if (hasCompletedOnboarding !== 'true') {
+        setShowOnboarding(true)
+      }
+      
+      if (storedUserName) {
+        setUserName(storedUserName)
+      }
+    } catch (error) {
+      console.warn('Error checking onboarding status:', error)
+    }
+  }, [])
 
   // Load data from localStorage on mount
   useEffect(() => {
@@ -79,6 +101,32 @@ function App() {
     setScanHistory(prev => [scan, ...prev])
   }
 
+  const handleOnboardingComplete = (name) => {
+    try {
+      localStorage.setItem('hasCompletedOnboarding', 'true')
+      if (name) {
+        localStorage.setItem('userName', name)
+        setUserName(name)
+      }
+      setShowOnboarding(false)
+    } catch (error) {
+      console.warn('Error saving onboarding completion:', error)
+    }
+  }
+
+  const handleOnboardingSkip = () => {
+    try {
+      localStorage.setItem('hasCompletedOnboarding', 'true')
+      setShowOnboarding(false)
+    } catch (error) {
+      console.warn('Error saving onboarding skip:', error)
+    }
+  }
+
+  const handleRedoOnboarding = () => {
+    setShowOnboarding(true)
+  }
+
   const tabs = [
     { id: 'scanner', label: 'Scanner', icon: Home },
     { id: 'recipes', label: 'Recipes', icon: ChefHat },
@@ -112,7 +160,7 @@ function App() {
       case 'history':
         return <HistoryTab history={scanHistory} />
       case 'profile':
-        return <ProfileTab preferences={preferences} setPreferences={setPreferences} />
+        return <ProfileTab preferences={preferences} setPreferences={setPreferences} onRedoOnboarding={handleRedoOnboarding} />
       default:
         return <ScannerTab addToHistory={addToHistory} pantry={pantry} setPantry={setPantry} />
     }
@@ -120,6 +168,14 @@ function App() {
 
   return (
     <div className="min-h-screen bg-[#f2f2f7] flex flex-col max-w-md mx-auto relative">
+      {/* Onboarding Overlay */}
+      {showOnboarding && (
+        <Onboarding 
+          onComplete={handleOnboardingComplete}
+          onSkip={handleOnboardingSkip}
+        />
+      )}
+
       <main className="flex-1 overflow-auto pb-20">
         {renderTab()}
       </main>

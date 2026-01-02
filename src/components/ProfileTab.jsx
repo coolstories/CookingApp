@@ -9,8 +9,10 @@ function getScansToday() {
   return date === today ? count : 0
 }
 
-function ProfileTab({ preferences, setPreferences }) {
+function ProfileTab({ preferences, setPreferences, onRedoOnboarding }) {
   const [selectedMenu, setSelectedMenu] = useState(null)
+  const [userName, setUserName] = useState('Guest User')
+  const [avatarImage, setAvatarImage] = useState(null)
   const [notifications, setNotifications] = useState({
     recipes: true,
     tips: true
@@ -21,9 +23,19 @@ function ProfileTab({ preferences, setPreferences }) {
   })
   const [scansToday, setScansToday] = useState(getScansToday())
 
-  // Load settings and notifications from localStorage on mount
+  // Load user name, avatar, and settings from localStorage on mount
   useEffect(() => {
     try {
+      const storedUserName = localStorage.getItem('userName')
+      if (storedUserName) {
+        setUserName(storedUserName)
+      }
+
+      const storedAvatar = localStorage.getItem('userAvatar')
+      if (storedAvatar) {
+        setAvatarImage(storedAvatar)
+      }
+
       const storedSettings = localStorage.getItem('appSettings')
       if (storedSettings) setSettings(JSON.parse(storedSettings))
 
@@ -34,6 +46,28 @@ function ProfileTab({ preferences, setPreferences }) {
     }
     setScansToday(getScansToday())
   }, [])
+
+  // Save avatar to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      if (avatarImage) {
+        localStorage.setItem('userAvatar', avatarImage)
+      }
+    } catch (error) {
+      console.warn('Error saving avatar to localStorage:', error)
+    }
+  }, [avatarImage])
+
+  const handleAvatarChange = (event) => {
+    const file = event.target.files[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setAvatarImage(reader.result)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
 
   // Save settings to localStorage whenever they change
   useEffect(() => {
@@ -84,6 +118,14 @@ function ProfileTab({ preferences, setPreferences }) {
       content: 'Customize your app experience and preferences'
     },
     { 
+      id: 'onboarding', 
+      title: 'Redo Onboarding', 
+      icon: User, 
+      color: 'bg-blue-100', 
+      iconColor: 'text-blue-500',
+      content: 'Go through the welcome tutorial again to learn about Recipee features'
+    },
+    { 
       id: 'help', 
       title: 'Help & Support', 
       icon: HelpCircle, 
@@ -126,15 +168,33 @@ function ProfileTab({ preferences, setPreferences }) {
       <div className="bg-white rounded-2xl p-6 mb-4">
         <div className="flex items-center gap-4">
           <div className="relative">
-            <div className="w-20 h-20 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center">
-              <User size={36} className="text-white" />
+            <div className="w-20 h-20 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center overflow-hidden">
+              {avatarImage ? (
+                <img 
+                  src={avatarImage} 
+                  alt="User Avatar" 
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <User size={36} className="text-white" />
+              )}
             </div>
-            <button className="absolute bottom-0 right-0 bg-white rounded-full p-1.5 shadow-lg border border-gray-200 active:scale-90 transition-transform">
+            <input
+              type="file"
+              id="avatar-upload"
+              accept="image/*"
+              onChange={handleAvatarChange}
+              className="hidden"
+            />
+            <button 
+              onClick={() => document.getElementById('avatar-upload').click()}
+              className="absolute bottom-0 right-0 bg-white rounded-full p-1.5 shadow-lg border border-gray-200 active:scale-90 transition-transform"
+            >
               <Camera size={14} className="text-gray-600" />
             </button>
           </div>
           <div className="flex-1">
-            <h2 className="text-xl font-bold text-gray-900">Guest User</h2>
+            <h2 className="text-xl font-bold text-gray-900">{userName}</h2>
             <p className="text-gray-500 text-sm">Welcome to Recipee!</p>
           </div>
         </div>
@@ -270,6 +330,35 @@ function ProfileTab({ preferences, setPreferences }) {
                     <option>Imperial (oz, cups)</option>
                   </select>
                 </div>
+              </div>
+            )}
+
+            {selectedMenu.id === 'onboarding' && (
+              <div className="space-y-4">
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <p className="font-semibold text-gray-900 mb-2">Welcome Tutorial</p>
+                  <p className="text-sm text-gray-700 mb-4">
+                    Go through the interactive onboarding experience to learn about all of Recipee's features:
+                  </p>
+                  <div className="space-y-2 text-sm text-gray-600">
+                    <p>• How to scan ingredients with AI</p>
+                    <p>• Discover 5 personalized recipes</p>
+                    <p>• Set your dietary preferences</p>
+                    <p>• Choose your favorite theme</p>
+                    <p>• Get the most out of Recipee</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => {
+                    localStorage.removeItem('hasCompletedOnboarding')
+                    localStorage.removeItem('userName')
+                    setSelectedMenu(null) // Close the popup first
+                    setTimeout(() => onRedoOnboarding(), 100) // Then start onboarding
+                  }}
+                  className="w-full p-3 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
+                >
+                  Start Onboarding Tutorial
+                </button>
               </div>
             )}
 
