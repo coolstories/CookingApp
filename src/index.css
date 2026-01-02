@@ -19,6 +19,14 @@ body {
   background-color: #000000 !important;
 }
 
+.dark .min-h-screen {
+  background-color: #000000 !important;
+}
+
+.dark h1, .dark h2, .dark h3 {
+  color: #000000 !important;
+}
+
 .dark .bg-white {
   background-color: #000000 !important;
 }
