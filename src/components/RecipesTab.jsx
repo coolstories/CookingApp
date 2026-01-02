@@ -140,34 +140,33 @@ function RecipesTab({ pantry, preferences, recipes, setRecipes }) {
     })
 
     try {
-      const ingredientList = pantry.map(p => p.name).join(', ')
-      const enabledPrefs = preferences.filter(p => p.enabled)
-      
-      let prefPrompt = ''
-      if (enabledPrefs.length > 0) {
-        const prefNames = enabledPrefs.map(p => p.name).join(', ')
-        prefPrompt = `\n\nIMPORTANT: The user has these preferences: ${prefNames}. Make sure ALL recipes respect these preferences. For example, if they're vegetarian, no meat. If they have a sweet tooth, include desserts. Tailor recipes specifically to match their preferences.`
+      // Check if API key is available
+      if (!OPENROUTER_API_KEY) {
+        throw new Error('API key not found. Please check your environment variables.')
       }
 
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 90000)
+      console.log('Making API request with key:', OPENROUTER_API_KEY.substring(0, 10) + '...')
 
-      // Build preference constraints
+      const ingredientList = pantry.map(item => `${item.name} (${item.quantity})`).join(', ')
       let prefConstraints = ''
       let excludeIngredients = ''
-      if (enabledPrefs.length > 0) {
-        const prefNames = enabledPrefs.map(p => p.name).join(', ')
-        prefConstraints = `\n\nDIETARY PREFERENCES: ${prefNames}`
-        
-        // Build exclusion list based on preferences
-        const exclusions = []
-        if (enabledPrefs.some(p => p.id === 'vegetarian')) exclusions.push('meat', 'poultry', 'fish', 'seafood')
-        if (enabledPrefs.some(p => p.id === 'vegan')) exclusions.push('meat', 'poultry', 'fish', 'seafood', 'milk', 'cheese', 'butter', 'cream', 'eggs', 'honey')
-        if (enabledPrefs.some(p => p.id === 'glutenfree')) exclusions.push('wheat', 'barley', 'rye', 'gluten')
-        if (enabledPrefs.some(p => p.id === 'dairyfree')) exclusions.push('milk', 'cheese', 'butter', 'cream', 'yogurt')
-        
-        if (exclusions.length > 0) {
-          excludeIngredients = `\n\nDO NOT use these ingredients in any recipe: ${[...new Set(exclusions)].join(', ')}`
+
+      if (preferences && preferences.length > 0) {
+        const enabledPrefs = preferences.filter(p => p.enabled)
+        if (enabledPrefs.length > 0) {
+          const prefNames = enabledPrefs.map(p => p.name).join(', ')
+          prefConstraints = `\n\nDIETARY PREFERENCES: ${prefNames}`
+          
+          // Build exclusion list based on preferences
+          const exclusions = []
+          if (enabledPrefs.some(p => p.id === 'vegetarian')) exclusions.push('meat', 'poultry', 'fish', 'seafood')
+          if (enabledPrefs.some(p => p.id === 'vegan')) exclusions.push('meat', 'poultry', 'fish', 'seafood', 'milk', 'cheese', 'butter', 'cream', 'eggs', 'honey')
+          if (enabledPrefs.some(p => p.id === 'glutenfree')) exclusions.push('wheat', 'barley', 'rye', 'gluten')
+          if (enabledPrefs.some(p => p.id === 'dairyfree')) exclusions.push('milk', 'cheese', 'butter', 'cream', 'yogurt')
+          
+          if (exclusions.length > 0) {
+            excludeIngredients = `\n\nDO NOT use these ingredients in any recipe: ${[...new Set(exclusions)].join(', ')}`
+          }
         }
       }
 
@@ -204,21 +203,51 @@ Return ONLY a JSON array:
             }]
           })
         }),
-        animationPromise
+        new Promise((resolve) => {
+          const stepDuration = 5500
+          setTimeout(() => setCurrentStep(1), stepDuration * 1)
+          setTimeout(() => setCurrentStep(2), stepDuration * 2)
+          setTimeout(() => setCurrentStep(3), stepDuration * 3)
+          setTimeout(() => resolve(), stepDuration * 4)
+        })
       ])
 
       clearTimeout(timeoutId)
 
-      if (!response.ok) throw new Error('Failed to find recipes')
+      console.log('API Response status:', response.status)
+      console.log('API Response headers:', response.headers)
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('API Error Response:', errorText)
+        
+        if (response.status === 401) {
+          throw new Error('Authentication failed. Please check your API key.')
+        } else if (response.status === 403) {
+          throw new Error('Access forbidden. Your API key may not have access to this model.')
+        } else if (response.status === 404) {
+          throw new Error('User not found. Please check your OpenRouter account.')
+        } else {
+          throw new Error(`API Error: ${response.status} - ${errorText}`)
+        }
+      }
 
       const data = await response.json()
       const content = data.choices[0]?.message?.content
+
+      if (!content) {
+        throw new Error('No content received from API')
+      }
 
       let parsedRecipes = []
       try {
         const jsonMatch = content.match(/\[[\s\S]*\]/)
         if (jsonMatch) parsedRecipes = JSON.parse(jsonMatch[0])
-      } catch {}
+      } catch (parseError) {
+        console.error('JSON Parse Error:', parseError)
+        console.error('Content received:', content)
+        throw new Error('Failed to parse recipe data from API response')
+      }
 
       await new Promise(resolve => setTimeout(resolve, 500))
       setShowChecklist(false)
@@ -228,8 +257,16 @@ Return ONLY a JSON array:
       incrementRecipeSearchesToday()
       setSearchesRemaining(DAILY_RECIPE_LIMIT - getRecipeSearchesToday())
     } catch (err) {
+      console.error('Recipe search error:', err)
       setShowChecklist(false)
-      setError(err.name === 'AbortError' ? 'Request timed out.' : 'Failed to find recipes.')
+      
+      if (err.name === 'AbortError') {
+        setError('Request timed out. Please try again.')
+      } else if (err.message.includes('API key')) {
+        setError(err.message)
+      } else {
+        setError(err.message || 'Failed to find recipes. Please try again.')
+      }
     } finally {
       setLoading(false)
     }
