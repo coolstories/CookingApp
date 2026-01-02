@@ -58,6 +58,17 @@ function ProfileTab({ preferences, setPreferences, onRedoOnboarding }) {
     }
   }, [avatarImage])
 
+  // Save user name to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      if (userName && userName !== 'Guest User') {
+        localStorage.setItem('userName', userName)
+      }
+    } catch (error) {
+      console.warn('Error saving user name to localStorage:', error)
+    }
+  }, [userName])
+
   const handleAvatarChange = (event) => {
     const file = event.target.files[0]
     if (file) {
