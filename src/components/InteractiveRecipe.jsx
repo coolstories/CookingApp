@@ -7,6 +7,7 @@ function InteractiveRecipe({ recipe, onClose }) {
   const [timers, setTimers] = useState({})
   const [isMuted, setIsMuted] = useState(false)
   const [activeTimer, setActiveTimer] = useState(null)
+  const [showConfetti, setShowConfetti] = useState(false)
   const audioRef = useRef(null)
 
   // Simple timer sound initialization
@@ -178,6 +179,15 @@ function InteractiveRecipe({ recipe, onClose }) {
 
   const progressPercentage = recipe && recipe.steps ? (completedSteps.length / recipe.steps.length) * 100 : 0
 
+  // Trigger confetti when all steps are completed
+  useEffect(() => {
+    if (recipe && recipe.steps && completedSteps.length === recipe.steps.length && completedSteps.length > 0) {
+      setShowConfetti(true)
+      // Hide confetti after 5 seconds
+      setTimeout(() => setShowConfetti(false), 5000)
+    }
+  }, [completedSteps, recipe.steps])
+
   if (!recipe) {
     return (
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -193,6 +203,40 @@ function InteractiveRecipe({ recipe, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      {/* Confetti Celebration */}
+      {showConfetti && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-full">
+            {[...Array(50)].map((_, i) => (
+              <div
+                key={i}
+                className="absolute animate-bounce"
+                style={{
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  animationDelay: `${Math.random() * 2}s`,
+                  animationDuration: `${2 + Math.random() * 3}s`
+                }}
+              >
+                <div className={`w-3 h-3 rounded-full ${
+                  ['bg-yellow-400', 'bg-orange-400', 'bg-red-400', 'bg-pink-400', 'bg-purple-400', 'bg-blue-400', 'bg-green-400'][Math.floor(Math.random() * 7)]
+                }`}></div>
+              </div>
+            ))}
+          </div>
+          
+          {/* Celebration Message */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="bg-white rounded-3xl p-8 shadow-2xl text-center animate-bounce">
+              <div className="text-6xl mb-4">🎉</div>
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">You Made It!</h2>
+              <p className="text-xl text-gray-600 mb-4">Delicious {recipe.name} completed!</p>
+              <div className="text-4xl">🍳✨</div>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <div className="bg-white rounded-3xl w-full max-w-md h-[90vh] overflow-y-auto shadow-2xl">
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 p-4 z-10">
