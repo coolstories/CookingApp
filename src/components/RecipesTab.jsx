@@ -528,7 +528,7 @@ If canMake is true, "need" should be empty. If false, list what's missing with q
               {filteredRecipes.map((recipe, idx) => (
                 <div
                   key={idx}
-                  onClick={() => setDetailedRecipe(recipe)}
+                  onClick={() => setInteractiveRecipe(recipe)}
                   className="bg-white rounded-2xl p-4 border border-gray-200 hover:border-orange-300 hover:shadow-lg transition-all cursor-pointer"
                 >
                   <div className="flex items-start justify-between mb-2">
