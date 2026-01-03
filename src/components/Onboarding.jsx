@@ -13,66 +13,96 @@ function Onboarding({ onComplete, onSkip }) {
     {
       id: 0,
       title: "Welcome to Recipee! 🍳",
-      subtitle: "Your AI-powered kitchen assistant",
-      description: "Transform your ingredients into delicious meals with smart recipe suggestions tailored just for you.",
+      subtitle: "Let's get you cooking in minutes",
+      description: "I'll guide you through exactly how to use Recipee to turn your ingredients into delicious meals.",
       icon: ChefHat,
       bgColor: "bg-gradient-to-br from-orange-400 via-red-500 to-pink-500",
       hasInput: true,
       inputPlaceholder: "What's your name?",
       inputValue: userName,
       onInputChange: setUserName,
-      animation: "bounce"
+      animation: "bounce",
+      steps: [
+        "👋 Enter your name above",
+        "👆 Click 'Next' to continue",
+        "📱 Learn how to scan ingredients"
+      ]
     },
     {
       id: 1,
-      title: "Scan Your Pantry 📸",
-      subtitle: "AI-powered ingredient detection",
-      description: "Point your camera at ingredients and watch our AI recognize everything from fresh vegetables to pantry staples. No more typing!",
+      title: "Step 1: Scan Your Ingredients 📸",
+      subtitle: "Here's exactly what to do:",
+      description: "Start by telling Recipee what ingredients you have. This is how we'll find perfect recipes for you!",
       icon: Camera,
       bgColor: "bg-gradient-to-br from-blue-400 via-purple-500 to-indigo-600",
-      features: ["📸 Smart camera scanning", "🧠 AI ingredient recognition", "⚡ Instant results"],
-      animation: "pulse"
+      animation: "pulse",
+      steps: [
+        "📸 Tap 'Take Photo' or 'Upload Photo'",
+        "🥕 Point camera at your ingredients",
+        "✅ Our AI will recognize everything",
+        "👆 Click 'Find Recipes' when done"
+      ]
     },
     {
       id: 2,
-      title: "Discover Recipes 🍝",
-      subtitle: "5 personalized meals every time",
-      description: "Get perfectly balanced recipes for breakfast, lunch, dinner, snack, and dessert using ingredients you actually have.",
+      title: "Step 2: Get Your Recipes 🍝",
+      subtitle: "Watch the magic happen!",
+      description: "Recipee will find 5 perfect recipes using your ingredients. Each recipe is different: breakfast, lunch, dinner, snack, and dessert!",
       icon: Heart,
       bgColor: "bg-gradient-to-br from-green-400 via-emerald-500 to-teal-600",
-      features: ["🌅 Breakfast ideas", "🥗 Lunch options", "🍽️ Dinner recipes", "🍪 Snacks & desserts"],
-      animation: "spin"
+      animation: "spin",
+      steps: [
+        "⏳ Wait for recipe suggestions",
+        "👆 Click any recipe you like",
+        "🍳 Start interactive cooking mode",
+        "⏰ Use timers for each step"
+      ]
     },
     {
       id: 3,
-      title: "Your Preferences 🥗",
-      subtitle: "Cook your way, every day",
-      description: "Vegetarian, gluten-free, sweet tooth, spicy? We'll remember your dietary needs and suggest recipes you'll love.",
-      icon: Settings,
-      bgColor: "bg-gradient-to-br from-purple-400 via-pink-500 to-rose-600",
-      features: ["🥬 Dietary restrictions", "🌶️ Spice preferences", "🍰 Sweet or savory", "💪 Health goals"],
-      animation: "wiggle"
+      title: "Step 3: Cook with Timers ⏰",
+      subtitle: "Never burn food again!",
+      description: "Each recipe step has automatic timers. We'll tell you exactly when to flip, stir, or take things off the heat!",
+      icon: ChefHat,
+      bgColor: "bg-gradient-to-br from-yellow-400 via-orange-500 to-red-600",
+      animation: "wiggle",
+      steps: [
+        "✅ Check off steps as you complete them",
+        "▶️ Press 'Start' on cooking timers",
+        "🔊 Hear when timers finish",
+        "🎉 Get confetti when you're done!"
+      ]
     },
     {
       id: 4,
-      title: "Choose Your Theme 🌙",
-      subtitle: "Perfect for any time of day",
-      description: "Cook in bright light mode during the day, switch to elegant dark mode for evening cooking sessions.",
-      icon: Moon,
-      bgColor: "bg-gradient-to-br from-gray-700 via-gray-800 to-gray-900",
-      features: ["☀️ Bright light mode", "🌙 Comfortable dark mode", "🎨 Beautiful colors", "👁️ Easy on the eyes"],
-      animation: "float"
+      title: "Step 4: Customize Your Experience ⚙️",
+      subtitle: "Make Recipee yours!",
+      description: "Set your dietary preferences and customize your profile. Recipee will remember everything for future cooking!",
+      icon: Settings,
+      bgColor: "bg-gradient-to-br from-purple-400 via-pink-500 to-rose-600",
+      animation: "float",
+      steps: [
+        "👤 Upload a profile picture",
+        "🥗 Set dietary preferences",
+        "🌙 Choose light/dark theme",
+        "🔄 Access settings anytime"
+      ]
     },
     {
       id: 5,
-      title: `Ready to Cook, ${userName || 'Guest User'}! 👨‍🍳`,
-      subtitle: "Your culinary journey starts now",
-      description: "You're all set to scan ingredients, discover amazing recipes, and create delicious meals. Let's get cooking!",
+      title: `You're Ready, ${userName || 'Guest User'}! 🎉`,
+      subtitle: "Let's start cooking!",
+      description: "You now know exactly how to use Recipee. Time to scan your first ingredients and make something delicious!",
       icon: Sparkles,
-      bgColor: "bg-gradient-to-br from-yellow-400 via-orange-500 to-red-600",
+      bgColor: "bg-gradient-to-br from-green-400 via-blue-500 to-purple-600",
       isFinal: true,
       animation: "celebrate",
-      features: ["📸 Scan ingredients with AI", "🍽️ Get 5 personalized recipes", "⚙️ Customize your preferences", "🔄 Replay this tutorial anytime in Settings"]
+      steps: [
+        "📸 Go to Scanner tab",
+        "📷 Take a photo of ingredients",
+        "🍽️ Click 'Find Recipes'",
+        "👨‍🍳 Start cooking!"
+      ]
     }
   ]
 
@@ -248,13 +278,14 @@ function Onboarding({ onComplete, onSkip }) {
             {currentScreenData.description}
           </p>
 
-          {/* Feature List */}
-          {currentScreenData.features && (
-            <div className="mb-6 space-y-2">
-              {currentScreenData.features.map((feature, index) => (
-                <div key={index} className="flex items-center gap-2 text-white/90 text-sm">
-                  <Check size={16} className="text-white/70" />
-                  <span>{feature}</span>
+          {/* Step-by-Step Instructions */}
+          {currentScreenData.steps && (
+            <div className="mb-6 space-y-3">
+              <div className="text-white/80 text-sm font-medium mb-2">Here's what to do:</div>
+              {currentScreenData.steps.map((step, index) => (
+                <div key={index} className="flex items-start gap-3 text-white/90 text-sm bg-white/10 rounded-lg p-3">
+                  <span className="text-white/70 mt-0.5">{index + 1}.</span>
+                  <span className="leading-relaxed">{step}</span>
                 </div>
               ))}
             </div>
@@ -299,11 +330,11 @@ function Onboarding({ onComplete, onSkip }) {
           {/* Screen-specific Tips */}
           <div className="text-center mt-4 text-white/60 text-xs">
             {currentScreen === 0 && "💡 Your name makes the experience personal"}
-            {currentScreen === 1 && "💡 Works with any ingredients"}
-            {currentScreen === 2 && "💡 No food waste, just delicious meals"}
-            {currentScreen === 3 && "💡 We remember your preferences"}
-            {currentScreen === 4 && "💡 Easy on the eyes, day or night"}
-            {currentScreen === 5 && "🎉 You can replay this tutorial anytime in Profile → Settings!"}
+            {currentScreen === 1 && "📸 Tip: Good lighting helps AI recognize ingredients better"}
+            {currentScreen === 2 && "🍽️ Tip: Each recipe has different meal types"}
+            {currentScreen === 3 && "⏰ Tip: Timers help prevent burning food"}
+            {currentScreen === 4 && "⚙️ Tip: Settings are in the Profile tab"}
+            {currentScreen === 5 && "🎉 You're ready to start your culinary journey!"}
           </div>
         </div>
 
