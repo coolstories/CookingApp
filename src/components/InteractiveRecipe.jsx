@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Clock, Users, Flame, Play, Pause, RotateCcw, CheckCircle2, Circle, ChefHat, Timer, Volume2, VolumeX } from 'lucide-react'
+import { Clock, Users, Flame, Play, Pause, RotateCcw, CheckCircle2, Circle, ChefHat, Timer, Volume2, VolumeX, X } from 'lucide-react'
 
 function InteractiveRecipe({ recipe, onClose }) {
   const [currentStep, setCurrentStep] = useState(0)
@@ -9,77 +9,103 @@ function InteractiveRecipe({ recipe, onClose }) {
   const [activeTimer, setActiveTimer] = useState(null)
   const audioRef = useRef(null)
 
-  // Initialize audio for timer sounds
+  // Simple timer sound initialization
   useEffect(() => {
-    if (typeof Audio !== 'undefined') {
-      audioRef.current = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmFgU7k9n1unEiBC13yO/eizEIHWq+8+OWT')
+    try {
+      if (typeof Audio !== 'undefined') {
+        audioRef.current = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmFgU7k9n1unEiBC13yO/eizEIHWq+8+OWT')
+      }
+    } catch (error) {
+      console.warn('Audio initialization failed:', error)
     }
   }, [])
 
   // Play timer sound
   const playTimerSound = () => {
-    if (audioRef.current && !isMuted) {
-      audioRef.current.play().catch(() => {})
+    try {
+      if (audioRef.current && !isMuted) {
+        audioRef.current.play().catch(() => {})
+      }
+    } catch (error) {
+      console.warn('Sound play failed:', error)
     }
   }
 
   // Extract time from step text
   const extractTimeFromStep = (step) => {
-    const timeMatches = step.match(/(\d+)\s*(minutes?|mins?|hours?|hrs?|seconds?|secs?)/gi)
-    if (!timeMatches) return null
+    if (!step) return null
     
-    const timeMap = {
-      'second': 1, 'seconds': 1, 'sec': 1, 'secs': 1,
-      'minute': 60, 'minutes': 60, 'min': 60, 'mins': 60,
-      'hour': 3600, 'hours': 3600, 'hr': 3600, 'hrs': 3600
-    }
-    
-    let totalSeconds = 0
-    timeMatches.forEach(match => {
-      const parts = match.match(/(\d+)\s*(second|seconds|sec|secs|minute|minutes|min|mins|hour|hours|hr|hrs)/i)
-      if (parts) {
-        const [, amount, unit] = parts
-        totalSeconds += parseInt(amount) * (timeMap[unit.toLowerCase()] || 60)
+    try {
+      const timeMatches = step.match(/(\d+)\s*(minutes?|mins?|hours?|hrs?|seconds?|secs?)/gi)
+      if (!timeMatches) return null
+      
+      const timeMap = {
+        'second': 1, 'seconds': 1, 'sec': 1, 'secs': 1,
+        'minute': 60, 'minutes': 60, 'min': 60, 'mins': 60,
+        'hour': 3600, 'hours': 3600, 'hr': 3600, 'hrs': 3600
       }
-    })
-    
-    return totalSeconds > 0 ? totalSeconds : null
+      
+      let totalSeconds = 0
+      timeMatches.forEach(match => {
+        const parts = match.match(/(\d+)\s*(second|seconds|sec|secs|minute|minutes|min|mins|hour|hours|hr|hrs)/i)
+        if (parts) {
+          const [, amount, unit] = parts
+          totalSeconds += parseInt(amount) * (timeMap[unit.toLowerCase()] || 60)
+        }
+      })
+      
+      return totalSeconds > 0 ? totalSeconds : null
+    } catch (error) {
+      console.warn('Time extraction failed:', error)
+      return null
+    }
   }
 
   // Initialize timers for each step
   useEffect(() => {
-    const newTimers = {}
-    recipe.steps?.forEach((step, idx) => {
-      const timeInSeconds = extractTimeFromStep(step)
-      if (timeInSeconds) {
-        newTimers[idx] = {
-          duration: timeInSeconds,
-          remaining: timeInSeconds,
-          isRunning: false,
-          isCompleted: false
+    if (!recipe || !recipe.steps) return
+    
+    try {
+      const newTimers = {}
+      recipe.steps.forEach((step, idx) => {
+        const timeInSeconds = extractTimeFromStep(step)
+        if (timeInSeconds) {
+          newTimers[idx] = {
+            duration: timeInSeconds,
+            remaining: timeInSeconds,
+            isRunning: false,
+            isCompleted: false
+          }
         }
-      }
-    })
-    setTimers(newTimers)
+      })
+      setTimers(newTimers)
+    } catch (error) {
+      console.warn('Timer initialization failed:', error)
+    }
   }, [recipe.steps])
 
   // Timer countdown effect
   useEffect(() => {
     const interval = setInterval(() => {
       setTimers(prev => {
-        const updated = { ...prev }
-        Object.keys(updated).forEach(idx => {
-          const timer = updated[idx]
-          if (timer.isRunning && timer.remaining > 0) {
-            timer.remaining -= 1
-            if (timer.remaining === 0) {
-              timer.isRunning = false
-              timer.isCompleted = true
-              playTimerSound()
+        try {
+          const updated = { ...prev }
+          Object.keys(updated).forEach(idx => {
+            const timer = updated[idx]
+            if (timer.isRunning && timer.remaining > 0) {
+              timer.remaining -= 1
+              if (timer.remaining === 0) {
+                timer.isRunning = false
+                timer.isCompleted = true
+                playTimerSound()
+              }
             }
-          }
-        })
-        return updated
+          })
+          return updated
+        } catch (error) {
+          console.warn('Timer update failed:', error)
+          return prev
+        }
       })
     }, 1000)
 
@@ -87,52 +113,83 @@ function InteractiveRecipe({ recipe, onClose }) {
   }, [])
 
   const toggleTimer = (stepIdx) => {
-    setTimers(prev => ({
-      ...prev,
-      [stepIdx]: {
-        ...prev[stepIdx],
-        isRunning: !prev[stepIdx]?.isRunning
-      }
-    }))
-    setActiveTimer(activeTimer === stepIdx ? null : stepIdx)
-  }
-
-  const resetTimer = (stepIdx) => {
-    const timer = timers[stepIdx]
-    if (timer) {
+    try {
       setTimers(prev => ({
         ...prev,
         [stepIdx]: {
-          ...timer,
-          remaining: timer.duration,
-          isRunning: false,
-          isCompleted: false
+          ...prev[stepIdx],
+          isRunning: !prev[stepIdx]?.isRunning
         }
       }))
+      setActiveTimer(activeTimer === stepIdx ? null : stepIdx)
+    } catch (error) {
+      console.warn('Timer toggle failed:', error)
+    }
+  }
+
+  const resetTimer = (stepIdx) => {
+    try {
+      const timer = timers[stepIdx]
+      if (timer) {
+        setTimers(prev => ({
+          ...prev,
+          [stepIdx]: {
+            ...timer,
+            remaining: timer.duration,
+            isRunning: false,
+            isCompleted: false
+          }
+        }))
+      }
+    } catch (error) {
+      console.warn('Timer reset failed:', error)
     }
   }
 
   const toggleStepComplete = (stepIdx) => {
-    setCompletedSteps(prev => {
-      if (prev.includes(stepIdx)) {
-        return prev.filter(i => i !== stepIdx)
-      } else {
-        return [...prev, stepIdx]
-      }
-    })
-  }
-
-  const formatTime = (seconds) => {
-    if (seconds >= 3600) {
-      return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`
-    } else if (seconds >= 60) {
-      return `${Math.floor(seconds / 60)}m ${seconds % 60}s`
-    } else {
-      return `${seconds}s`
+    try {
+      setCompletedSteps(prev => {
+        if (prev.includes(stepIdx)) {
+          return prev.filter(i => i !== stepIdx)
+        } else {
+          return [...prev, stepIdx]
+        }
+      })
+    } catch (error) {
+      console.warn('Step toggle failed:', error)
     }
   }
 
-  const progressPercentage = recipe.steps ? (completedSteps.length / recipe.steps.length) * 100 : 0
+  const formatTime = (seconds) => {
+    if (!seconds) return '0s'
+    
+    try {
+      if (seconds >= 3600) {
+        return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`
+      } else if (seconds >= 60) {
+        return `${Math.floor(seconds / 60)}m ${seconds % 60}s`
+      } else {
+        return `${seconds}s`
+      }
+    } catch (error) {
+      return '0s'
+    }
+  }
+
+  const progressPercentage = recipe && recipe.steps ? (completedSteps.length / recipe.steps.length) * 100 : 0
+
+  if (!recipe) {
+    return (
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl p-6 text-center">
+          <p className="text-gray-600">No recipe data available</p>
+          <button onClick={onClose} className="mt-4 px-4 py-2 bg-gray-500 text-white rounded-lg">
+            Close
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -140,7 +197,7 @@ function InteractiveRecipe({ recipe, onClose }) {
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 p-4 z-10">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold text-gray-900">{recipe.name}</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{recipe.name || 'Recipe'}</h1>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setIsMuted(!isMuted)}
@@ -170,9 +227,9 @@ function InteractiveRecipe({ recipe, onClose }) {
 
           {/* Recipe Info */}
           <div className="flex gap-4 text-sm text-gray-600">
-            <div className="flex items-center gap-1"><Clock size={16} className="text-orange-500" />{recipe.time}</div>
-            <div className="flex items-center gap-1"><Users size={16} className="text-blue-500" />{recipe.servings} servings</div>
-            <div className="flex items-center gap-1"><Flame size={16} className="text-red-500" />{recipe.difficulty}</div>
+            <div className="flex items-center gap-1"><Clock size={16} className="text-orange-500" />{recipe.time || 'N/A'}</div>
+            <div className="flex items-center gap-1"><Users size={16} className="text-blue-500" />{recipe.servings || 'N/A'} servings</div>
+            <div className="flex items-center gap-1"><Flame size={16} className="text-red-500" />{recipe.difficulty || 'N/A'}</div>
           </div>
         </div>
 
