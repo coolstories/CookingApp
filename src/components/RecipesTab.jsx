@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ChefHat, Loader2, Clock, Users, Flame, Search, X, Filter, CheckCircle2, Circle } from 'lucide-react'
+import InteractiveRecipe from './InteractiveRecipe'
 
 const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY
 const DAILY_RECIPE_LIMIT = 5
@@ -93,6 +94,7 @@ function RecipesTab({ pantry, preferences, recipes, setRecipes }) {
   const [loading, setLoading] = useState(false)
   const [selectedRecipe, setSelectedRecipe] = useState(null)
   const [detailedRecipe, setDetailedRecipe] = useState(null)
+  const [interactiveRecipe, setInteractiveRecipe] = useState(null)
   const [error, setError] = useState(null)
   const [showChecklist, setShowChecklist] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
@@ -661,9 +663,26 @@ If canMake is true, "need" should be empty. If false, list what's missing with q
                   </ul>
                 </div>
               )}
+
+              {/* Interactive Cooking Button */}
+              <button
+                onClick={() => setInteractiveRecipe(detailedRecipe)}
+                className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-2xl p-4 font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2"
+              >
+                <ChefHat size={20} />
+                Start Interactive Cooking
+              </button>
             </div>
           </div>
         </div>
+      )}
+
+      {/* Interactive Recipe Modal */}
+      {interactiveRecipe && (
+        <InteractiveRecipe 
+          recipe={interactiveRecipe} 
+          onClose={() => setInteractiveRecipe(null)} 
+        />
       )}
     </div>
   )
