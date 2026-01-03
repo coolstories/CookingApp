@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { User, Settings, Bell, HelpCircle, Shield, ChevronRight, Camera, X } from 'lucide-react'
+import { User, Settings, Bell, HelpCircle, Shield, ChevronRight, Camera, X, Sparkles } from 'lucide-react'
 
 function getScansToday() {
   const stored = localStorage.getItem('scanUsage')
@@ -116,6 +116,14 @@ function ProfileTab({ preferences, setPreferences, onRedoOnboarding }) {
       color: 'bg-gray-100', 
       iconColor: 'text-gray-500',
       content: 'Customize your app experience and preferences'
+    },
+    { 
+      id: 'tour', 
+      title: 'App Tour', 
+      icon: Sparkles, 
+      color: 'bg-purple-100', 
+      iconColor: 'text-purple-500',
+      content: 'Take a guided tour of Recipee features and learn how to use everything'
     },
     { 
       id: 'onboarding', 
@@ -330,6 +338,36 @@ function ProfileTab({ preferences, setPreferences, onRedoOnboarding }) {
                     <option>Imperial (oz, cups)</option>
                   </select>
                 </div>
+              </div>
+            )}
+
+            {selectedMenu.id === 'tour' && (
+              <div className="space-y-4">
+                <div className="bg-purple-50 p-4 rounded-lg">
+                  <p className="font-semibold text-gray-900 mb-2">Guided App Tour</p>
+                  <p className="text-sm text-gray-700 mb-4">
+                    Take a comprehensive tour of Recipee's features and learn how to make the most of your cooking experience:
+                  </p>
+                  <div className="space-y-2 text-sm text-gray-600">
+                    <p>• Scanner - AI-powered ingredient recognition</p>
+                    <p>• Recipes - Personalized dish suggestions</p>
+                    <p>• History - Track your cooking journey</p>
+                    <p>• Profile - Customize your preferences</p>
+                    <p>• Interactive cooking with timers</p>
+                    <p>• Admin access for unlimited scans</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => {
+                    localStorage.removeItem('hasCompletedTour')
+                    setSelectedMenu(null)
+                    // Trigger tour start by reloading the page
+                    window.location.reload()
+                  }}
+                  className="w-full p-3 bg-purple-500 text-white rounded-lg text-sm font-medium hover:bg-purple-600 transition-colors"
+                >
+                  Start App Tour
+                </button>
               </div>
             )}
 
