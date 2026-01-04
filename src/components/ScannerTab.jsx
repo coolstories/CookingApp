@@ -309,22 +309,27 @@ ${settings.unsureIngredients
         if (jsonMatch) {
           try {
             const cleanJson = jsonMatch[0].replace(/,\s*]/g, ']').replace(/,\s*}/g, '}')
+            console.log('AI Response JSON:', cleanJson)
             const parsed = JSON.parse(cleanJson)
             if (parsed.ingredients && Array.isArray(parsed.ingredients)) {
               for (const ing of parsed.ingredients) {
+                console.log('Processing ingredient:', ing)
                 allIngredients.push({
                   name: ing.name || ing.Name || 'Unknown',
                   quantity: ing.quantity || ing.Quantity || '1',
                   confident: ing.confident !== false, // Default to true if not specified
-                  bounds: ing.bounds || ing.Bounds || [0, 0, 10, 10] // Default bounds if not specified
+                  bounds: ing.bounds || ing.Bounds || [Math.random() * 80 + 10, Math.random() * 80 + 10, 10, 10] // Random fallback bounds
                 })
               }
             }
-          } catch {}
+          } catch (parseError) {
+            console.error('JSON parse error:', parseError)
+          }
         }
         
         // Fallback regex parsing if JSON parse failed
         if (allIngredients.length === 0) {
+          console.log('Using fallback regex parsing')
           const patterns = [
             /\{\s*"Name"\s*:\s*"([^"]+)"\s*,\s*"Quantity"\s*:\s*"([^"]+)"/gi,
             /\{\s*"name"\s*:\s*"([^"]+)"\s*,\s*"quantity"\s*:\s*"([^"]+)"/gi,
@@ -336,7 +341,12 @@ ${settings.unsureIngredients
               const name = match[1]
               const quantity = match[2]
               if (!allIngredients.some(ing => ing.name.toLowerCase() === name.toLowerCase())) {
-                allIngredients.push({ name, quantity, confident: true, bounds: [0, 0, 10, 10] })
+                allIngredients.push({ 
+                  name, 
+                  quantity, 
+                  confident: true, 
+                  bounds: [Math.random() * 80 + 10, Math.random() * 80 + 10, 10, 10] 
+                })
               }
             }
           }
@@ -353,11 +363,12 @@ ${settings.unsureIngredients
           // Extract bounding box positions with fallbacks
           const positions = filtered.map(({ name, bounds }) => ({ 
             name, 
-            bounds: bounds || [0, 0, 10, 10] // Fallback bounds if missing
+            bounds: bounds || [Math.random() * 80 + 10, Math.random() * 80 + 10, 10, 10] // Fallback bounds if missing
           }))
           
           // Validate that we have positions for all ingredients
           console.log(`Found ${filtered.length} ingredients, created ${positions.length} labels`)
+          console.log('Ingredient positions:', positions)
           
           setIngredientPositions(positions)
           
@@ -390,14 +401,21 @@ ${settings.unsureIngredients
         while ((match = simplePattern.exec(fullText)) !== null) {
           const name = match[1]
           if (name && name !== 'food' && name !== 'Unknown' && name.length > 1) {
-            fallbackIngredients.push({ name, quantity: '1', confident: true, bounds: [0, 0, 10, 10] })
+            fallbackIngredients.push({ 
+              name, 
+              quantity: '1', 
+              confident: true, 
+              bounds: [Math.random() * 80 + 10, Math.random() * 80 + 10, 10, 10] 
+            })
           }
         }
         
         if (fallbackIngredients.length > 0) {
+          console.log('Using final fallback with', fallbackIngredients.length, 'ingredients')
           parsedIngredients = { ingredients: fallbackIngredients }
         } else {
-          parsedIngredients = { ingredients: [{ name: 'Unable to parse ingredients', quantity: '1', confident: true, bounds: [0, 0, 10, 10] }] }
+          console.log('No ingredients found, using error message')
+          parsedIngredients = { ingredients: [{ name: 'Unable to parse ingredients', quantity: '1', confident: true, bounds: [50, 50, 10, 10] }] }
         }
       }
 
