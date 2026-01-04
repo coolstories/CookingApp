@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Chef Hat -->
+  <path d="M16 4C12 4 8 6 8 10V12H24V10C24 6 20 4 16 4Z" fill="#2563eb"/>
+  <path d="M8 12V14C8 16 10 18 12 18H20C22 18 24 16 24 14V12H8Z" fill="#3b82f6"/>
+  <path d="M12 18V20C12 22 14 24 16 24C18 24 20 22 20 20V18H12Z" fill="#60a5fa"/>
+  <!-- Cooking pot base -->
+  <ellipse cx="16" cy="26" rx="8" ry="2" fill="#ea580c"/>
+  <rect x="14" y="24" width="4" height="2" fill="#dc2626"/>
+  <!-- Steam -->
+  <path d="M14 2C14 2 13 0 13 2C13 4 12 2 12 4" stroke="#94a3b8" stroke-width="1" stroke-linecap="round"/>
+  <path d="M16 2C16 2 15 0 15 2C15 4 14 2 14 4" stroke="#94a3b8" stroke-width="1" stroke-linecap="round"/>
+  <path d="M18 2C18 2 17 0 17 2C17 4 16 2 16 4" stroke="#94a3b8" stroke-width="1" stroke-linecap="round"/>
+</svg>
