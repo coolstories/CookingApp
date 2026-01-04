@@ -109,6 +109,7 @@ function RecipesTab({ pantry, preferences, recipes, setRecipes }) {
 
   const recipeSteps = [
     'Analyzing pantry...',
+    'Matching ingredients...',
     'Finding recipes...',
     'Ranking results...'
   ]
@@ -129,14 +130,15 @@ function RecipesTab({ pantry, preferences, recipes, setRecipes }) {
     setShowChecklist(true)
     setCurrentStep(0)
 
-    // Animation runs independently - 1.5 seconds per step (4.5 sec total)
+    // Animation runs independently - 1.5 seconds per step (6 sec total)
     const stepDuration = 1500
     
     // Create a promise that resolves when animation completes
     const animationPromise = new Promise((resolve) => {
       setTimeout(() => setCurrentStep(1), stepDuration * 1)
       setTimeout(() => setCurrentStep(2), stepDuration * 2)
-      setTimeout(() => resolve(), stepDuration * 3)
+      setTimeout(() => setCurrentStep(3), stepDuration * 3)
+      setTimeout(() => resolve(), stepDuration * 4)
     })
 
     try {
