@@ -5,7 +5,6 @@ import HistoryTab from './components/HistoryTab'
 import ProfileTab from './components/ProfileTab'
 import RecipesTab from './components/RecipesTab'
 import Onboarding from './components/Onboarding'
-import AppTour from './components/AppTour'
 
 function App() {
   const [activeTab, setActiveTab] = useState('scanner')
@@ -17,7 +16,6 @@ function App() {
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [userName, setUserName] = useState('')
   const [selectedMenu, setSelectedMenu] = useState(null)
-  const [showTour, setShowTour] = useState(false)
   const [preferences, setPreferences] = useState([
     { id: 'vegetarian', name: 'Vegetarian', emoji: '🥬', description: 'No meat or fish', enabled: false },
     { id: 'vegan', name: 'Vegan', emoji: '🌱', description: 'No animal products', enabled: false },
@@ -34,7 +32,6 @@ function App() {
     try {
       const hasCompletedOnboarding = localStorage.getItem('hasCompletedOnboarding')
       const storedUserName = localStorage.getItem('userName')
-      const hasCompletedTour = localStorage.getItem('hasCompletedTour')
       
       if (hasCompletedOnboarding !== 'true') {
         setShowOnboarding(true)
@@ -42,11 +39,6 @@ function App() {
       
       if (storedUserName) {
         setUserName(storedUserName)
-      }
-
-      // Show tour button if not completed
-      if (hasCompletedTour !== 'true') {
-        setShowTour(true)
       }
     } catch (error) {
       console.warn('Error checking onboarding status:', error)
@@ -135,19 +127,6 @@ function App() {
     setShowOnboarding(true)
   }
 
-  const handleTourComplete = () => {
-    setShowTour(false)
-    try {
-      localStorage.setItem('hasCompletedTour', 'true')
-    } catch (error) {
-      console.warn('Error saving tour completion:', error)
-    }
-  }
-
-  const handleTourStart = () => {
-    console.log('Tour started')
-  }
-
   const tabs = [
     { id: 'scanner', label: 'Scanner', icon: Home },
     { id: 'recipes', label: 'Recipes', icon: ChefHat },
@@ -197,14 +176,6 @@ function App() {
         />
       )}
 
-      {/* App Tour */}
-      {showTour && (
-        <AppTour 
-          onComplete={handleTourComplete}
-          onStart={handleTourStart}
-        />
-      )}
-
       <main className="flex-1 overflow-auto pb-20">
         {renderTab()}
       </main>
@@ -217,7 +188,6 @@ function App() {
             return (
               <button
                 key={tab.id}
-                data-tour={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className="flex flex-col items-center justify-center flex-1 h-full transition-all duration-200"
               >

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Camera, ChefHat, Heart, Moon, Settings, Sparkles, ChevronRight, X, ArrowLeft, Check } from 'lucide-react'
+import { Camera, ChefHat, Heart, Settings, Sparkles, ChevronRight, X, ChevronLeft, Check, Utensils, Clock, Users } from 'lucide-react'
 
 function Onboarding({ onComplete, onSkip }) {
   const [currentScreen, setCurrentScreen] = useState(0)
@@ -12,97 +12,87 @@ function Onboarding({ onComplete, onSkip }) {
   const screens = [
     {
       id: 0,
-      title: "Welcome to Recipee! 🍳",
-      subtitle: "Let's get you cooking in minutes",
-      description: "I'll guide you through exactly how to use Recipee to turn your ingredients into delicious meals.",
+      title: "Welcome to Recipee",
+      subtitle: "Your AI kitchen companion",
+      description: "Turn ingredients into delicious meals with smart recipe suggestions.",
       icon: ChefHat,
-      bgColor: "bg-gradient-to-br from-orange-400 via-red-500 to-pink-500",
+      bgColor: "from-orange-500 to-red-600",
       hasInput: true,
-      inputPlaceholder: "What's your name?",
-      inputValue: userName,
-      onInputChange: setUserName,
-      animation: "bounce",
-      steps: [
-        "� Learn to scan ingredients with AI",
-        "🍽️ Discover 5 personalized recipes",
-        "⏰ Cook with interactive timers",
-        "🎉 Get celebrated when you finish!"
-      ]
+      inputPlaceholder: "Enter your name"
     },
     {
       id: 1,
-      title: "Step 1: Scan Your Ingredients 📸",
-      subtitle: "Here's exactly what to do:",
-      description: "Start by telling Recipee what ingredients you have. This is how we'll find perfect recipes for you!",
+      title: "Scan Ingredients",
+      subtitle: "AI-powered detection",
+      description: "Take photos of ingredients and let AI recognize everything automatically.",
       icon: Camera,
-      bgColor: "bg-gradient-to-br from-blue-400 via-purple-500 to-indigo-600",
-      animation: "pulse",
+      bgColor: "from-blue-500 to-purple-600",
       steps: [
-        "📸 Tap 'Take Photo' or 'Upload Photo'",
-        "🥕 Point camera at your ingredients",
-        "✅ Our AI will recognize everything",
-        "👆 Click 'Find Recipes' when done"
+        "Tap Scanner tab",
+        "Take or upload photo", 
+        "AI identifies ingredients",
+        "Add to pantry"
       ]
     },
     {
       id: 2,
-      title: "Step 2: Get Your Recipes 🍝",
-      subtitle: "Watch the magic happen!",
-      description: "Recipee will find 5 perfect recipes using your ingredients. Each recipe is different: breakfast, lunch, dinner, snack, and dessert!",
+      title: "Discover Recipes",
+      subtitle: "Personalized meal suggestions",
+      description: "Get 5 tailored recipes using ingredients you actually have.",
       icon: Heart,
-      bgColor: "bg-gradient-to-br from-green-400 via-emerald-500 to-teal-600",
-      animation: "spin",
+      bgColor: "from-green-500 to-teal-600",
       steps: [
-        "⏳ Wait for recipe suggestions",
-        "👆 Click any recipe you like",
-        "🍳 Start interactive cooking mode",
-        "⏰ Use timers for each step"
+        "Tap Recipes tab",
+        "Click Find Recipes",
+        "AI analyzes pantry",
+        "Get meal suggestions"
       ]
     },
     {
       id: 3,
-      title: "Step 3: Cook with Timers ⏰",
-      subtitle: "Never burn food again!",
-      description: "Each recipe step has automatic timers. We'll tell you exactly when to flip, stir, or take things off the heat!",
-      icon: ChefHat,
-      bgColor: "bg-gradient-to-br from-yellow-400 via-orange-500 to-red-600",
-      animation: "wiggle",
-      steps: [
-        "✅ Check off steps as you complete them",
-        "▶️ Press 'Start' on cooking timers",
-        "🔊 Hear when timers finish",
-        "🎉 Get confetti when you're done!"
+      title: "Interactive Cooking",
+      subtitle: "Step-by-step guidance",
+      description: "Follow recipes with timers, progress tracking, and celebrations.",
+      icon: Clock,
+      bgColor: "from-purple-500 to-pink-600",
+      features: [
+        "Auto timers for steps",
+        "Progress tracking", 
+        "Confetti celebrations",
+        "Audio alerts"
       ]
     },
     {
       id: 4,
-      title: "Step 4: Customize Your Experience ⚙️",
-      subtitle: "Make Recipee yours!",
-      description: "Set your dietary preferences and customize your profile. Recipee will remember everything for future cooking!",
+      title: "Customize Experience",
+      subtitle: "Make it yours",
+      description: "Set preferences, upload avatar, and personalize your cooking journey.",
       icon: Settings,
-      bgColor: "bg-gradient-to-br from-purple-400 via-pink-500 to-rose-600",
-      animation: "float",
-      steps: [
-        "👤 Upload a profile picture",
-        "🥗 Set dietary preferences",
-        "🌙 Choose light/dark theme",
-        "🔄 Access settings anytime"
+      bgColor: "from-gray-700 to-gray-900",
+      features: [
+        "Dietary preferences",
+        "Profile avatar",
+        "Light/dark themes",
+        "Personal settings"
       ]
     },
     {
       id: 5,
-      title: `You're Ready, ${userName || 'Guest User'}! 🎉`,
-      subtitle: "Let's start cooking!",
-      description: "You now know exactly how to use Recipee. Time to scan your first ingredients and make something delicious!",
+      title: `Ready to Cook, ${userName || 'Chef'}!`,
+      subtitle: "Your AI kitchen companion awaits",
+      description: "You're all set to create amazing meals with ingredients you have. Here's what you can do:",
       icon: Sparkles,
-      bgColor: "bg-gradient-to-br from-green-400 via-blue-500 to-purple-600",
+      bgColor: "from-yellow-500 to-orange-600",
       isFinal: true,
-      animation: "celebrate",
-      steps: [
-        "📸 Go to Scanner tab",
-        "📷 Take a photo of ingredients",
-        "🍽️ Click 'Find Recipes'",
-        "👨‍🍳 Start cooking!"
+      features: [
+        "📸 Scan ingredients with AI camera",
+        "🍝 Get 5 personalized recipes daily",
+        "👨‍🍳 Cook with interactive timers",
+        "📊 Track your cooking progress",
+        "🎉 Celebrate with confetti",
+        "⚙️ Customize dietary preferences",
+        "👤 Upload your profile avatar",
+        "🌙 Switch between themes"
       ]
     }
   ]
@@ -119,31 +109,44 @@ function Onboarding({ onComplete, onSkip }) {
         }
       }, 300)
     } else {
+      // Final screen - complete onboarding and save user name
+      if (userName.trim()) {
+        localStorage.setItem('userName', userName.trim())
+      }
       onComplete(userName)
     }
   }
 
-  const handleBack = () => {
+  const handleSkip = () => {
+    // Save user name even if skipping onboarding
+    if (userName.trim()) {
+      localStorage.setItem('userName', userName.trim())
+    }
+    onSkip(userName)
+  }
+
+  const handlePrev = () => {
+    console.log('Back button clicked, currentScreen:', currentScreen)
     if (currentScreen > 0) {
       setIsAnimating(true)
       setTimeout(() => {
         setCurrentScreen(currentScreen - 1)
         setIsAnimating(false)
+        console.log('Moved to screen:', currentScreen - 1)
       }, 300)
     }
   }
 
-  const handleSkip = () => {
-    onSkip()
+  const handleCardTap = () => {
+    // Removed card tap functionality - users must use Next button or swipe
   }
 
-  // Touch handlers for swipe navigation
   const handleTouchStart = (e) => {
-    touchStartX.current = e.touches[0].clientX
+    touchStartX.current = e.targetTouches[0].clientX
   }
 
   const handleTouchEnd = (e) => {
-    touchEndX.current = e.changedTouches[0].clientX
+    touchEndX.current = e.targetTouches[0].clientX
     handleSwipe()
   }
 
@@ -153,91 +156,50 @@ function Onboarding({ onComplete, onSkip }) {
     
     if (Math.abs(diff) > swipeThreshold) {
       if (diff > 0 && currentScreen < screens.length - 1) {
-        // Swipe left - next screen
         handleNext()
       } else if (diff < 0 && currentScreen > 0) {
-        // Swipe right - previous screen
-        handleBack()
+        handlePrev()
       }
-    }
-  }
-
-  // Tap handler for card navigation
-  const handleCardTap = (e) => {
-    // Only handle taps on the card area, not on buttons or inputs
-    if (e.target.closest('button') || e.target.closest('input')) {
-      return
-    }
-    
-    // Tap on right side = next, left side = back
-    const cardRect = e.currentTarget.getBoundingClientRect()
-    const tapX = e.clientX - cardRect.left
-    const cardWidth = cardRect.width
-    
-    if (tapX > cardWidth * 0.7 && currentScreen < screens.length - 1) {
-      handleNext()
-    } else if (tapX < cardWidth * 0.3 && currentScreen > 0) {
-      handleBack()
     }
   }
 
   const currentScreenData = screens[currentScreen]
   const Icon = currentScreenData.icon
 
-  // Animation classes
-  const getAnimationClass = (animation) => {
-    switch (animation) {
-      case 'bounce': return 'animate-bounce'
-      case 'pulse': return 'animate-pulse'
-      case 'spin': return 'animate-spin'
-      case 'wiggle': return 'animate-wiggle'
-      case 'float': return 'animate-float'
-      case 'celebrate': return 'animate-celebrate'
-      default: return ''
-    }
-  }
-
   return (
-    <div 
-      className="fixed inset-0 bg-black z-50 flex items-center justify-center p-4 overflow-hidden"
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-    >
-      {/* Animated Background */}
-      <div className="absolute inset-0 opacity-20">
-        <div className="absolute top-10 left-10 w-32 h-32 bg-white rounded-full animate-pulse"></div>
-        <div className="absolute bottom-10 right-10 w-24 h-24 bg-white rounded-full animate-pulse delay-75"></div>
-        <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-white rounded-full animate-pulse delay-150"></div>
+    <div className="fixed inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-start justify-center p-4 pt-8 overflow-hidden z-[9999]">
+      {/* Background Elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-orange-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
       </div>
 
-      {/* Confetti for final screen */}
+      {/* Confetti */}
       {showConfetti && (
-        <div className="absolute inset-0 pointer-events-none">
-          {[...Array(20)].map((_, i) => (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {[...Array(30)].map((_, i) => (
             <div
               key={i}
-              className="absolute animate-fall"
+              className="absolute animate-bounce"
               style={{
                 left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
                 animationDelay: `${Math.random() * 2}s`,
                 animationDuration: `${2 + Math.random() * 2}s`
               }}
             >
-              <div className={`w-3 h-3 rounded-full ${
-                ['bg-yellow-400', 'bg-orange-400', 'bg-red-400', 'bg-pink-400', 'bg-purple-400'][Math.floor(Math.random() * 5)]
+              <div className={`w-2 h-2 rounded-full ${
+                ['bg-yellow-400', 'bg-orange-400', 'bg-red-400', 'bg-pink-400', 'bg-purple-400', 'bg-blue-400'][Math.floor(Math.random() * 6)]
               }`}></div>
             </div>
           ))}
         </div>
       )}
 
-      <div className="w-full max-w-sm relative z-10">
+      <div className="w-full max-w-md relative z-10">
         {/* Progress Bar */}
         <div className="mb-8">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-white/60 text-sm">Getting started</span>
-            <span className="text-white/60 text-sm">{currentScreen + 1}/{screens.length}</span>
-          </div>
           <div className="h-2 bg-white/20 rounded-full overflow-hidden">
             <div 
               className="h-full bg-white rounded-full transition-all duration-500 ease-out"
@@ -246,128 +208,113 @@ function Onboarding({ onComplete, onSkip }) {
           </div>
         </div>
 
-        {/* Skip Button - Moved down and centered */}
+        {/* Skip Button */}
         <button
           onClick={handleSkip}
-          className="absolute top-10 left-1/2 transform -translate-x-1/2 text-white/60 hover:text-white transition-all duration-300 hover:scale-110 text-sm font-medium"
+          className="absolute top-3 left-1/2 transform -translate-x-1/2 text-white/60 hover:text-white transition-colors text-sm font-medium"
         >
-          Skip Onboarding
+          Skip
         </button>
 
-        {/* Main Content Card */}
+        {/* Main Card */}
         <div 
-          className={`${currentScreenData.bgColor} rounded-3xl p-8 text-white shadow-2xl transform transition-all duration-300 cursor-pointer ${
+          className={`bg-gradient-to-br ${currentScreenData.bgColor} rounded-3xl p-16 text-white shadow-2xl transform transition-all duration-300 cursor-default ${
             isAnimating ? 'scale-95 opacity-50' : 'scale-100 opacity-100'
           }`}
-          onClick={handleCardTap}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
         >
-          {/* Icon with Animation */}
+          {/* Icon */}
           <div className="flex justify-center mb-6">
-            <div className={`w-24 h-24 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm border-2 border-white/30 ${getAnimationClass(currentScreenData.animation)}`}>
-              <Icon size={48} className="text-white" />
+            <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/30">
+              <Icon size={40} className="text-white" />
             </div>
           </div>
 
-          {/* Text Content */}
-          <h1 className="text-3xl font-bold text-center mb-3 leading-tight">
-            {currentScreenData.title}
-          </h1>
-          <p className="text-lg text-center text-white/90 mb-4 font-medium">
-            {currentScreenData.subtitle}
-          </p>
-          <p className="text-center text-white/80 mb-6 leading-relaxed text-sm">
-            {currentScreenData.description}
-          </p>
+          {/* Content */}
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold mb-2">
+              {currentScreenData.title}
+            </h1>
+            <p className="text-white/90 font-medium mb-3">
+              {currentScreenData.subtitle}
+            </p>
+            <p className="text-white/80 text-sm leading-relaxed">
+              {currentScreenData.description}
+            </p>
+          </div>
 
-          {/* Step-by-Step Instructions */}
-          {currentScreenData.steps && (
-            <div className="mb-6 space-y-3">
-              <div className="text-white/80 text-sm font-medium mb-2">Here's what to do:</div>
-              {currentScreenData.steps.map((step, index) => (
-                <div key={index} className="flex items-start gap-3 text-white/90 text-sm bg-white/10 rounded-lg p-3">
-                  <span className="text-white/70 mt-0.5">{index + 1}.</span>
-                  <span className="leading-relaxed">{step}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Input Field for First Screen */}
+          {/* Input Field */}
           {currentScreenData.hasInput && (
-            <div className="mb-6">
+            <div className="mb-8">
               <input
                 type="text"
                 placeholder={currentScreenData.inputPlaceholder}
-                value={currentScreenData.inputValue}
-                onChange={(e) => currentScreenData.onInputChange(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-white/20 backdrop-blur-sm text-white placeholder-white/60 border border-white/30 focus:outline-none focus:border-white/60 focus:bg-white/30 transition-all duration-300"
+                value={userName}
+                onChange={(e) => setUserName(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl bg-white/20 backdrop-blur-sm text-white placeholder-white/60 border border-white/30 focus:outline-none focus:border-white/60 focus:bg-white/30 transition-all text-center"
                 autoFocus
               />
             </div>
           )}
 
-          {/* Navigation Buttons */}
-          <div className="flex gap-3">
-            {currentScreen > 0 && (
-              <button
-                onClick={handleBack}
-                className="px-4 py-3 rounded-xl bg-white/20 backdrop-blur-sm text-white font-medium hover:bg-white/30 transition-all duration-300 flex items-center gap-2"
-              >
-                <ArrowLeft size={18} />
-                Back
-              </button>
-            )}
+          {/* Steps */}
+          {currentScreenData.steps && (
+            <div className="mb-8 space-y-3">
+              {currentScreenData.steps.map((step, index) => (
+                <div key={index} className="flex items-center gap-3 text-white/90 text-sm">
+                  <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-xs font-bold">
+                    {index + 1}
+                  </div>
+                  <span>{step}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Features */}
+          {currentScreenData.features && (
+            <div className="mb-8 space-y-2">
+              {currentScreenData.features.map((feature, index) => (
+                <div key={index} className="flex items-center gap-2 text-white/90 text-sm">
+                  <Check size={16} className="text-white/70" />
+                  <span>{feature}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Navigation */}
+          <div className="flex items-center justify-between">
             <button
-              onClick={handleNext}
-              className={`flex-1 px-6 py-3 rounded-xl bg-white text-gray-900 font-semibold hover:bg-white/90 transition-all duration-300 flex items-center justify-center gap-2 transform hover:scale-105 ${
-                currentScreen === 0 ? '' : 'ml-auto'
-              } ${currentScreenData.isFinal ? 'animate-pulse' : ''}`}
+              onClick={(e) => {
+                e.stopPropagation()
+                handlePrev()
+              }}
+              disabled={currentScreen === 0}
+              className={`p-3 rounded-xl transition-all flex items-center gap-2 ${
+                currentScreen === 0 
+                  ? 'bg-white/10 opacity-50 cursor-not-allowed' 
+                  : 'bg-white/20 hover:bg-white/30 text-white'
+              }`}
             >
-              {currentScreenData.isFinal ? 'Start Cooking!' : 'Next'}
+              <ChevronLeft size={20} />
+              {currentScreen > 0 && <span className="text-sm font-medium">Back</span>}
+            </button>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                handleNext()
+              }}
+              className="px-6 py-3 rounded-xl bg-white text-gray-900 font-semibold hover:bg-white/90 transition-all flex items-center gap-2"
+            >
+              {currentScreen === screens.length - 1 ? 'Start Cooking' : 'Next'}
               <ChevronRight size={20} />
             </button>
           </div>
-
-          {/* Screen-specific Tips */}
-          <div className="text-center mt-4 text-white/60 text-xs">
-            {currentScreen === 0 && "💡 Your name makes the experience personal"}
-            {currentScreen === 1 && "📸 Tip: Good lighting helps AI recognize ingredients better"}
-            {currentScreen === 2 && "🍽️ Tip: Each recipe has different meal types"}
-            {currentScreen === 3 && "⏰ Tip: Timers help prevent burning food"}
-            {currentScreen === 4 && "⚙️ Tip: Settings are in the Profile tab"}
-            {currentScreen === 5 && "🎉 You're ready to start your culinary journey!"}
-          </div>
-        </div>
-
-        {/* Swipe Hint */}
-        <div className="text-center mt-6 text-white/40 text-sm animate-pulse">
-          {currentScreen < screens.length - 1 ? "Swipe left/right or tap sides to navigate" : "Tap anywhere to start cooking! 🚀"}
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes wiggle {
-          0%, 100% { transform: rotate(-3deg); }
-          50% { transform: rotate(3deg); }
-        }
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-10px); }
-        }
-        @keyframes celebrate {
-          0%, 100% { transform: scale(1) rotate(0deg); }
-          25% { transform: scale(1.1) rotate(5deg); }
-          75% { transform: scale(1.1) rotate(-5deg); }
-        }
-        @keyframes fall {
-          0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
-          100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
-        }
-        .animate-wiggle { animation: wiggle 0.5s ease-in-out infinite; }
-        .animate-float { animation: float 3s ease-in-out infinite; }
-        .animate-celebrate { animation: celebrate 1s ease-in-out infinite; }
-        .animate-fall { animation: fall linear forwards; }
-      `}</style>
     </div>
   )
 }

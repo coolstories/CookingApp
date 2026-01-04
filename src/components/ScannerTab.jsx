@@ -49,9 +49,10 @@ function ScannerTab({ addToHistory, pantry, setPantry, ingredients, setIngredien
   const [manualInput, setManualInput] = useState('')
   const [autocompleteSuggestions, setAutocompleteSuggestions] = useState([])
   const [scansRemaining, setScansRemaining] = useState(DAILY_SCAN_LIMIT - getScansToday())
-  const [uncertainIngredients, setUncertainIngredients] = useState([])
   const [showConfirmation, setShowConfirmation] = useState(false)
   const [confirmedIngredients, setConfirmedIngredients] = useState([])
+  const [uncertainIngredients, setUncertainIngredients] = useState([])
+  const [settings, setSettings] = useState({ unsureIngredients: false })
   const [adminMode, setAdminMode] = useState(false)
   const [tapCount, setTapCount] = useState(0)
   const [showAdminPassword, setShowAdminPassword] = useState(false)
@@ -60,6 +61,18 @@ function ScannerTab({ addToHistory, pantry, setPantry, ingredients, setIngredien
   const tapTimeoutRef = useRef(null)
   const fileInputRef = useRef(null)
   const cameraInputRef = useRef(null)
+
+  // Load settings from localStorage
+  useEffect(() => {
+    try {
+      const storedSettings = localStorage.getItem('appSettings')
+      if (storedSettings) {
+        setSettings(JSON.parse(storedSettings))
+      }
+    } catch (error) {
+      console.warn('Error loading settings from localStorage:', error)
+    }
+  }, [])
 
   const handleTitleTap = () => {
     setTapCount(prev => {
@@ -223,10 +236,12 @@ function ScannerTab({ addToHistory, pantry, setPantry, ingredients, setIngredien
 1. If it's a PREPARED/COOKED DISH (cake, pizza, burger, sandwich, soup, pancakes, pasta, etc), list it AS-IS. DO NOT break it down into ingredients.
 2. If it's RAW INGREDIENTS (vegetables, fruits, raw meat, spices), list each one.
 3. Capitalize first letter of each item.
-4. Add "confident": true if you're sure about the item, "confident": false if you're unsure or guessing.
+${settings.unsureIngredients ? '4. Add "confident": true if you\'re sure about the item, "confident": false if you\'re unsure or guessing.' : ''}
 
 Return ONLY this JSON (no markdown, no extra text):
-{"ingredients": [{"Name": "Item1", "Quantity": "1", "confident": true}, {"Name": "Item2", "Quantity": "1", "confident": false}]}`
+${settings.unsureIngredients 
+  ? '{"ingredients": [{"Name": "Item1", "Quantity": "1", "confident": true}, {"Name": "Item2", "Quantity": "1", "confident": false}]}' 
+  : '{"ingredients": [{"Name": "Item1", "Quantity": "1"}, {"Name": "Item2", "Quantity": "1"}]}'}`
                 },
                 {
                   type: 'image_url',
@@ -326,17 +341,22 @@ Return ONLY this JSON (no markdown, no extra text):
         )
         
         if (filtered.length > 0) {
-          // Separate confident and uncertain ingredients
-          const confidentItems = filtered.filter(ing => ing.confident)
-          const uncertainItems = filtered.filter(ing => !ing.confident)
-          
-          parsedIngredients = { ingredients: confidentItems.map(({ name, quantity }) => ({ name, quantity })) }
-          
-          // If there are uncertain ingredients, show confirmation popup
-          if (uncertainItems.length > 0) {
-            setUncertainIngredients(uncertainItems)
-            setConfirmedIngredients([])
-            setShowConfirmation(true)
+          if (settings.unsureIngredients) {
+            // Separate confident and uncertain ingredients
+            const confidentItems = filtered.filter(ing => ing.confident)
+            const uncertainItems = filtered.filter(ing => !ing.confident)
+            
+            parsedIngredients = { ingredients: confidentItems.map(({ name, quantity }) => ({ name, quantity })) }
+            
+            // If there are uncertain ingredients, show confirmation popup
+            if (uncertainItems.length > 0) {
+              setUncertainIngredients(uncertainItems)
+              setConfirmedIngredients([])
+              setShowConfirmation(true)
+            }
+          } else {
+            // Process all ingredients without uncertainty checking
+            parsedIngredients = { ingredients: filtered.map(({ name, quantity }) => ({ name, quantity })) }
           }
         } else {
           throw new Error('No valid ingredients found')
@@ -669,17 +689,6 @@ Return ONLY this JSON (no markdown, no extra text):
               </div>
               <h3 className="text-xl font-bold text-gray-900">Not Sure About These</h3>
               <p className="text-gray-500 text-sm mt-1">Do you have these items?</p>
-              
-              <button
-                onClick={() => {
-                  setShowConfirmation(false)
-                  setUncertainIngredients([])
-                  setConfirmedIngredients([])
-                }}
-                className="mt-4 text-sm text-blue-600 hover:text-blue-700 font-semibold underline"
-              >
-                Let AI decide
-              </button>
             </div>
 
             {uncertainIngredients.length > 0 ? (
