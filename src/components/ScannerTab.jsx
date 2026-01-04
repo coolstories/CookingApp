@@ -311,7 +311,8 @@ ${settings.unsureIngredients
                 allIngredients.push({
                   name: ing.name || ing.Name || 'Unknown',
                   quantity: ing.quantity || ing.Quantity || '1',
-                  confident: ing.confident !== false // Default to true if not specified
+                  confident: ing.confident !== false, // Default to true if not specified
+                  bounds: ing.bounds || ing.Bounds || [0, 0, 10, 10] // Default bounds if not specified
                 })
               }
             }
@@ -331,7 +332,7 @@ ${settings.unsureIngredients
               const name = match[1]
               const quantity = match[2]
               if (!allIngredients.some(ing => ing.name.toLowerCase() === name.toLowerCase())) {
-                allIngredients.push({ name, quantity, confident: true })
+                allIngredients.push({ name, quantity, confident: true, bounds: [0, 0, 10, 10] })
               }
             }
           }
@@ -345,8 +346,11 @@ ${settings.unsureIngredients
         )
         
         if (filtered.length > 0) {
-          // Extract bounding box positions
-          const positions = filtered.map(({ name, bounds }) => ({ name, bounds }))
+          // Extract bounding box positions with fallbacks
+          const positions = filtered.map(({ name, bounds }) => ({ 
+            name, 
+            bounds: bounds || [0, 0, 10, 10] // Fallback bounds if missing
+          }))
           setIngredientPositions(positions)
           
           if (settings.unsureIngredients) {
@@ -371,7 +375,22 @@ ${settings.unsureIngredients
         }
       } catch (parseErr) {
         console.error('Parse error:', parseErr, 'Full text:', fullText)
-        parsedIngredients = { ingredients: [{ name: 'Unable to parse ingredients', quantity: '1' }] }
+        // Fallback: try to extract any ingredients without bounds
+        const fallbackIngredients = []
+        const simplePattern = /"name"\s*:\s*"([^"]+)"/gi
+        let match
+        while ((match = simplePattern.exec(fullText)) !== null) {
+          const name = match[1]
+          if (name && name !== 'food' && name !== 'Unknown' && name.length > 1) {
+            fallbackIngredients.push({ name, quantity: '1', confident: true, bounds: [0, 0, 10, 10] })
+          }
+        }
+        
+        if (fallbackIngredients.length > 0) {
+          parsedIngredients = { ingredients: fallbackIngredients }
+        } else {
+          parsedIngredients = { ingredients: [{ name: 'Unable to parse ingredients', quantity: '1', confident: true, bounds: [0, 0, 10, 10] }] }
+        }
       }
 
       setIngredients(parsedIngredients)
