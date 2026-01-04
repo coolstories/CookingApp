@@ -280,22 +280,26 @@ function Onboarding({ onComplete, onSkip }) {
           )}
 
           {/* Navigation */}
-          <div className="flex items-center justify-between">
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                handlePrev()
-              }}
-              disabled={currentScreen === 0}
-              className={`p-3 rounded-xl transition-all flex items-center gap-2 ${
-                currentScreen === 0 
-                  ? 'bg-white/10 opacity-50 cursor-not-allowed' 
-                  : 'bg-white/20 hover:bg-white/30 text-white'
-              }`}
-            >
-              <ChevronLeft size={20} />
-              {currentScreen > 0 && <span className="text-sm font-medium">Back</span>}
-            </button>
+          <div className={`flex items-center ${
+            currentScreen === screens.length - 1 ? 'justify-center' : 'justify-between'
+          }`}>
+            {currentScreen < screens.length - 1 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handlePrev()
+                }}
+                disabled={currentScreen === 0}
+                className={`p-3 rounded-xl transition-all flex items-center gap-2 ${
+                  currentScreen === 0 
+                    ? 'bg-white/10 opacity-50 cursor-not-allowed' 
+                    : 'bg-white/20 hover:bg-white/30 text-white'
+                }`}
+              >
+                <ChevronLeft size={20} />
+                {currentScreen > 0 && <span className="text-sm font-medium">Back</span>}
+              </button>
+            )}
 
             <button
               onClick={(e) => {
