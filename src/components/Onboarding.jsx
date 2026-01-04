@@ -21,7 +21,13 @@ function Onboarding({ onComplete, onSkip }) {
       inputPlaceholder: "What's your name?",
       inputValue: userName,
       onInputChange: setUserName,
-      animation: "bounce"
+      animation: "bounce",
+      steps: [
+        "� Learn to scan ingredients with AI",
+        "🍽️ Discover 5 personalized recipes",
+        "⏰ Cook with interactive timers",
+        "🎉 Get celebrated when you finish!"
+      ]
     },
     {
       id: 1,
