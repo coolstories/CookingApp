@@ -86,13 +86,8 @@ function Onboarding({ onComplete, onSkip }) {
       isFinal: true,
       features: [
         "📸 Scan ingredients with AI camera",
-        "🍝 Get 5 personalized recipes daily",
-        "👨‍🍳 Cook with interactive timers",
-        "📊 Track your cooking progress",
-        "🎉 Celebrate with confetti",
-        "⚙️ Customize dietary preferences",
-        "👤 Upload your profile avatar",
-        "🌙 Switch between themes"
+        "🍝 Get 5 personalized recipes daily", 
+        "👨‍🍳 Cook with interactive timers"
       ]
     }
   ]
