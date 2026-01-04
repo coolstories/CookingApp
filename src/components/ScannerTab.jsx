@@ -53,6 +53,7 @@ function ScannerTab({ addToHistory, pantry, setPantry, ingredients, setIngredien
   const [confirmedIngredients, setConfirmedIngredients] = useState([])
   const [uncertainIngredients, setUncertainIngredients] = useState([])
   const [settings, setSettings] = useState({ unsureIngredients: false })
+  const [ingredientPositions, setIngredientPositions] = useState([])
   const [adminMode, setAdminMode] = useState(false)
   const [tapCount, setTapCount] = useState(0)
   const [showAdminPassword, setShowAdminPassword] = useState(false)
@@ -187,6 +188,7 @@ function ScannerTab({ addToHistory, pantry, setPantry, ingredients, setIngredien
     setImagePreview(null)
     setIngredients(null)
     setError(null)
+    setIngredientPositions([])
   }
 
   const scanIngredients = async () => {
@@ -199,6 +201,7 @@ function ScannerTab({ addToHistory, pantry, setPantry, ingredients, setIngredien
 
     setLoading(true)
     setError(null)
+    setIngredientPositions([])
     setShowScanning(true)
     setCurrentStep(0)
     setIngredients(null)
@@ -236,12 +239,13 @@ function ScannerTab({ addToHistory, pantry, setPantry, ingredients, setIngredien
 1. If it's a PREPARED/COOKED DISH (cake, pizza, burger, sandwich, soup, pancakes, pasta, etc), list it AS-IS. DO NOT break it down into ingredients.
 2. If it's RAW INGREDIENTS (vegetables, fruits, raw meat, spices), list each one.
 3. Capitalize first letter of each item.
-${settings.unsureIngredients ? '4. Add "confident": true if you\'re sure about the item, "confident": false if you\'re unsure or guessing.' : ''}
+4. For each item, provide bounding box coordinates as [x, y, width, height] where x,y are top-left corner (0-100% range).
+${settings.unsureIngredients ? '5. Add "confident": true if you\'re sure about the item, "confident": false if you\'re unsure or guessing.' : ''}
 
 Return ONLY this JSON (no markdown, no extra text):
 ${settings.unsureIngredients 
-  ? '{"ingredients": [{"Name": "Item1", "Quantity": "1", "confident": true}, {"Name": "Item2", "Quantity": "1", "confident": false}]}' 
-  : '{"ingredients": [{"Name": "Item1", "Quantity": "1"}, {"Name": "Item2", "Quantity": "1"}]}'}`
+  ? '{"ingredients": [{"Name": "Item1", "Quantity": "1", "bounds": [10, 20, 30, 40], "confident": true}, {"Name": "Item2", "Quantity": "1", "bounds": [50, 60, 25, 35], "confident": false}]}' 
+  : '{"ingredients": [{"Name": "Item1", "Quantity": "1", "bounds": [10, 20, 30, 40]}, {"Name": "Item2", "Quantity": "1", "bounds": [50, 60, 25, 35]}]}'}`
                 },
                 {
                   type: 'image_url',
@@ -341,6 +345,10 @@ ${settings.unsureIngredients
         )
         
         if (filtered.length > 0) {
+          // Extract bounding box positions
+          const positions = filtered.map(({ name, bounds }) => ({ name, bounds }))
+          setIngredientPositions(positions)
+          
           if (settings.unsureIngredients) {
             // Separate confident and uncertain ingredients
             const confidentItems = filtered.filter(ing => ing.confident)
@@ -565,6 +573,22 @@ ${settings.unsureIngredients
             <button onClick={clearImage} className="absolute top-3 right-3 bg-black/50 text-white rounded-full p-2">
               <X size={20} />
             </button>
+            
+            {/* Ingredient Labels Overlay */}
+            {ingredientPositions.map((ingredient, index) => (
+              <div
+                key={index}
+                className="absolute bg-blue-500 text-white text-xs px-2 py-1 rounded-md shadow-lg border border-white/50"
+                style={{
+                  left: `${ingredient.bounds[0]}%`,
+                  top: `${ingredient.bounds[1]}%`,
+                  transform: 'translate(-50%, -100%)'
+                }}
+              >
+                <div className="font-semibold">{ingredient.name}</div>
+                <div className="w-2 h-2 bg-blue-500 absolute -bottom-1 left-1/2 transform -translate-x-1/2 rotate-45 border-r border-b border-white/50"></div>
+              </div>
+            ))}
           </div>
 
           <button
