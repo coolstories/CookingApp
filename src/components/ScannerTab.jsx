@@ -239,13 +239,17 @@ function ScannerTab({ addToHistory, pantry, setPantry, ingredients, setIngredien
 1. If it's a PREPARED/COOKED DISH (cake, pizza, burger, sandwich, soup, pancakes, pasta, etc), list it AS-IS. DO NOT break it down into ingredients.
 2. If it's RAW INGREDIENTS (vegetables, fruits, raw meat, spices), list each one.
 3. Capitalize first letter of each item.
-4. For each item, provide bounding box coordinates as [x, y, width, height] where x,y are top-left corner (0-100% range).
-${settings.unsureIngredients ? '5. Add "confident": true if you\'re sure about the item, "confident": false if you\'re unsure or guessing.' : ''}
+4. For each item, provide PRECISE bounding box coordinates as [x_center, y_center, width, height] where:
+   - x_center, y_center are center points (0-100% range from top-left)
+   - width, height are the size of the bounding box (0-100% range)
+   - Be VERY ACCURATE with positioning - place labels exactly where the items are
+5. ONLY include items you can clearly see and identify
+${settings.unsureIngredients ? '6. Add "confident": true if you\'re 100% sure about the item and position, "confident": false if you\'re unsure.' : ''}
 
 Return ONLY this JSON (no markdown, no extra text):
 ${settings.unsureIngredients 
-  ? '{"ingredients": [{"Name": "Item1", "Quantity": "1", "bounds": [10, 20, 30, 40], "confident": true}, {"Name": "Item2", "Quantity": "1", "bounds": [50, 60, 25, 35], "confident": false}]}' 
-  : '{"ingredients": [{"Name": "Item1", "Quantity": "1", "bounds": [10, 20, 30, 40]}, {"Name": "Item2", "Quantity": "1", "bounds": [50, 60, 25, 35]}]}'}`
+  ? '{"ingredients": [{"Name": "Tomato", "Quantity": "2", "bounds": [25, 30, 15, 20], "confident": true}, {"Name": "Cheese", "Quantity": "1", "bounds": [60, 45, 20, 25], "confident": false}]}' 
+  : '{"ingredients": [{"Name": "Tomato", "Quantity": "2", "bounds": [25, 30, 15, 20]}, {"Name": "Cheese", "Quantity": "1", "bounds": [60, 45, 20, 25]}]}'}`
                 },
                 {
                   type: 'image_url',
@@ -351,6 +355,10 @@ ${settings.unsureIngredients
             name, 
             bounds: bounds || [0, 0, 10, 10] // Fallback bounds if missing
           }))
+          
+          // Validate that we have positions for all ingredients
+          console.log(`Found ${filtered.length} ingredients, created ${positions.length} labels`)
+          
           setIngredientPositions(positions)
           
           if (settings.unsureIngredients) {
@@ -597,17 +605,28 @@ ${settings.unsureIngredients
             {ingredientPositions.map((ingredient, index) => (
               <div
                 key={index}
-                className="absolute bg-blue-500 text-white text-xs px-2 py-1 rounded-md shadow-lg border border-white/50"
+                className="absolute bg-blue-500 text-white text-xs px-2 py-1 rounded-md shadow-lg border border-white/50 font-semibold"
                 style={{
                   left: `${ingredient.bounds[0]}%`,
                   top: `${ingredient.bounds[1]}%`,
-                  transform: 'translate(-50%, -100%)'
+                  transform: 'translate(-50%, -150%)',
+                  zIndex: 10
                 }}
               >
-                <div className="font-semibold">{ingredient.name}</div>
-                <div className="w-2 h-2 bg-blue-500 absolute -bottom-1 left-1/2 transform -translate-x-1/2 rotate-45 border-r border-b border-white/50"></div>
+                <div className="relative">
+                  {ingredient.name}
+                  {/* Arrow pointing down to the ingredient */}
+                  <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[4px] border-t-blue-500"></div>
+                </div>
               </div>
             ))}
+            
+            {/* Debug Info - Remove in production */}
+            {ingredientPositions.length > 0 && (
+              <div className="absolute bottom-3 left-3 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                {ingredientPositions.length} ingredients detected
+              </div>
+            )}
           </div>
 
           <button
