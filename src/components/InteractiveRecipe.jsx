@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Clock, Users, Flame, Play, Pause, RotateCcw, CheckCircle2, Circle, ChefHat, Timer, Volume2, VolumeX, X, AlertCircle, Thermometer, Eye, Hand, Utensils } from 'lucide-react'
+import { Clock, Users, Flame, Play, Pause, RotateCcw, CheckCircle2, Circle, ChefHat, Timer, Volume2, VolumeX, X, AlertCircle, Thermometer, Eye, Hand, Utensils, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react'
 
 function InteractiveRecipe({ recipe, onClose }) {
   const [currentStep, setCurrentStep] = useState(0)
@@ -10,6 +10,7 @@ function InteractiveRecipe({ recipe, onClose }) {
   const [showConfetti, setShowConfetti] = useState(false)
   const [stepNotes, setStepNotes] = useState({})
   const [stepImages, setStepImages] = useState({})
+  const [openNotes, setOpenNotes] = useState({})
   const audioRef = useRef(null)
 
   // Simple timer sound initialization
@@ -128,6 +129,14 @@ function InteractiveRecipe({ recipe, onClose }) {
     setStepNotes(prev => ({
       ...prev,
       [stepIndex]: note
+    }))
+  }
+
+  // Toggle notes for a specific step
+  const toggleStepNotes = (stepIndex) => {
+    setOpenNotes(prev => ({
+      ...prev,
+      [stepIndex]: !prev[stepIndex]
     }))
   }
 
@@ -457,19 +466,39 @@ function InteractiveRecipe({ recipe, onClose }) {
                           {step}
                         </p>
 
-                        {/* Step notes section */}
+                        {/* Step notes toggle button */}
                         <div className="mb-3">
-                          <div className="flex items-center gap-2 mb-2">
-                            <AlertCircle size={14} className="text-gray-400" />
-                            <span className="text-xs text-gray-500">Add notes about this step:</span>
-                          </div>
-                          <textarea
-                            value={stepNotes[idx] || ''}
-                            onChange={(e) => addStepNote(idx, e.target.value)}
-                            placeholder="e.g., Adjust heat if needed, watch for bubbles..."
-                            className="w-full p-2 text-xs border border-gray-200 rounded-lg resize-none h-16 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            rows={2}
-                          />
+                          <button
+                            onClick={() => toggleStepNotes(idx)}
+                            className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                          >
+                            <MessageSquare size={14} className="text-gray-600" />
+                            <span className="text-xs text-gray-600">
+                              {openNotes[idx] ? 'Hide Notes' : 'Add Notes'}
+                            </span>
+                            {openNotes[idx] ? (
+                              <ChevronUp size={12} className="text-gray-600" />
+                            ) : (
+                              <ChevronDown size={12} className="text-gray-600" />
+                            )}
+                          </button>
+                          
+                          {/* Collapsible notes section */}
+                          {openNotes[idx] && (
+                            <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                              <div className="flex items-center gap-2 mb-2">
+                                <AlertCircle size={14} className="text-gray-400" />
+                                <span className="text-xs text-gray-500">Add notes about this step:</span>
+                              </div>
+                              <textarea
+                                value={stepNotes[idx] || ''}
+                                onChange={(e) => addStepNote(idx, e.target.value)}
+                                placeholder="e.g., Adjust heat if needed, watch for bubbles..."
+                                className="w-full p-2 text-xs border border-gray-200 rounded-lg resize-none h-16 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                rows={2}
+                              />
+                            </div>
+                          )}
                         </div>
                         
                         {timer && (
