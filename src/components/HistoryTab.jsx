@@ -1,20 +1,61 @@
-import { Clock, ChevronRight, Sparkles } from 'lucide-react'
+import { Clock, ChevronRight, Sparkles, Trash2, AlertCircle, RefreshCw } from 'lucide-react'
 
 function HistoryTab({ history }) {
   const formatDate = (dateString) => {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffTime = Math.abs(now - date)
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+    try {
+      const date = new Date(dateString)
+      const now = new Date()
+      const diffTime = Math.abs(now - date)
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+      
+      if (diffDays === 0) {
+        return 'Today'
+      } else if (diffDays === 1) {
+        return 'Yesterday'
+      } else if (diffDays < 7) {
+        return `${diffDays} days ago`
+      } else {
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      }
+    } catch (error) {
+      console.warn('Date formatting error:', error)
+      return 'Unknown date'
+    }
+  }
+
+  const handleHistoryClick = (scan) => {
+    // Could implement functionality to view scan details or restore ingredients
+    console.log('History item clicked:', scan)
+    alert(`Scan from ${formatDate(scan.date)} with ${scan.ingredients?.length || 0} ingredients`)
+  }
+
+  const formatIngredientList = (ingredients) => {
+    if (!ingredients || ingredients.length === 0) return 'No ingredients found'
     
-    if (diffDays === 0) {
-      return 'Today'
-    } else if (diffDays === 1) {
-      return 'Yesterday'
-    } else if (diffDays < 7) {
-      return `${diffDays} days ago`
-    } else {
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    const maxDisplay = 3
+    const displayIngredients = ingredients.slice(0, maxDisplay)
+    const remainingCount = ingredients.length - maxDisplay
+    
+    let result = displayIngredients.map(i => i.name || i).join(', ')
+    
+    if (remainingCount > 0) {
+      result += ` +${remainingCount} more`
+    }
+    
+    return result
+  }
+
+  const addTestHistory = () => {
+    // This is just for testing - in production this wouldn't be needed
+    console.log('Current history:', history)
+    console.log('History length:', history.length)
+    
+    // Log localStorage contents
+    try {
+      const stored = localStorage.getItem('scanHistory')
+      console.log('localStorage scanHistory:', stored ? JSON.parse(stored) : 'None')
+    } catch (error) {
+      console.warn('localStorage read error:', error)
     }
   }
 
@@ -38,37 +79,67 @@ function HistoryTab({ history }) {
             <Sparkles size={16} className="animate-pulse-slow" />
             <span className="text-sm font-medium">Try scanning something!</span>
           </div>
+          
+          {/* Debug button - remove in production */}
+          <button
+            onClick={addTestHistory}
+            className="mt-4 px-4 py-2 bg-gray-100 rounded-lg text-xs text-gray-600 hover:bg-gray-200 transition-colors"
+          >
+            <RefreshCw size={12} className="inline mr-1" />
+            Debug History
+          </button>
         </div>
       ) : (
         <div className="space-y-3">
-          {history.map((scan, index) => (
-            <div
-              key={scan.id}
-              className="bg-white rounded-2xl p-4 flex items-center gap-4 active:scale-98 transition-all duration-200 hover:shadow-lg cursor-pointer animate-slideUp card-hover"
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-              <div className="relative">
-                <img
-                  src={scan.image}
-                  alt="Scan"
-                  className="w-16 h-16 rounded-xl object-cover shadow-md"
-                />
-                <div className="absolute inset-0 rounded-xl bg-gradient-to-t from-black/20 to-transparent" />
+          {history.map((scan, index) => {
+            const ingredientCount = scan.ingredients?.length || 0
+            const ingredientText = ingredientCount === 1 ? 'Ingredient' : 'Ingredients'
+            
+            return (
+              <div
+                key={scan.id}
+                onClick={() => handleHistoryClick(scan)}
+                className="bg-white rounded-2xl p-4 flex items-center gap-4 active:scale-98 transition-all duration-200 hover:shadow-lg cursor-pointer animate-slideUp card-hover"
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
+                <div className="relative">
+                  {scan.image ? (
+                    <>
+                      <img
+                        src={scan.image}
+                        alt="Scan"
+                        className="w-16 h-16 rounded-xl object-cover shadow-md"
+                        onError={(e) => {
+                          e.target.style.display = 'none'
+                          e.target.nextSibling.style.display = 'flex'
+                        }}
+                      />
+                      <div className="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center hidden">
+                        <Clock size={24} className="text-gray-400" />
+                      </div>
+                    </>
+                  ) : (
+                    <div className="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center">
+                      <Clock size={24} className="text-gray-400" />
+                    </div>
+                  )}
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-t from-black/20 to-transparent" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-gray-900 truncate">
+                    {ingredientCount} {ingredientText} Found
+                  </h3>
+                  <p className="text-sm text-gray-500 truncate">
+                    {formatIngredientList(scan.ingredients)}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {formatDate(scan.date)}
+                  </p>
+                </div>
+                <ChevronRight size={20} className="text-gray-300 flex-shrink-0" />
               </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-gray-900 truncate">
-                  {scan.ingredients.length} Ingredient{scan.ingredients.length !== 1 ? 's' : ''} Found
-                </h3>
-                <p className="text-sm text-gray-500 truncate">
-                  {scan.ingredients.map(i => i.name).join(', ')}
-                </p>
-                <p className="text-xs text-gray-400 mt-1">
-                  {formatDate(scan.date)}
-                </p>
-              </div>
-              <ChevronRight size={20} className="text-gray-300" />
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>

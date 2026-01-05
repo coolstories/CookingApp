@@ -48,6 +48,7 @@ function App() {
   // Load data from localStorage on mount
   useEffect(() => {
     try {
+      // Load all data in the correct order
       const storedHistory = localStorage.getItem('scanHistory')
       if (storedHistory) setScanHistory(JSON.parse(storedHistory))
 
@@ -61,10 +62,11 @@ function App() {
       if (storedPreferences) setPreferences(JSON.parse(storedPreferences))
 
       const storedActiveTab = localStorage.getItem('activeTab')
+      console.log('Loading activeTab from localStorage:', storedActiveTab)
       if (storedActiveTab) setActiveTab(storedActiveTab)
 
       const storedImagePreview = localStorage.getItem('imagePreview')
-      if (storedImagePreview) setImagePreview(storedImagePreview)
+      if (storedImagePreview && storedImagePreview !== '') setImagePreview(storedImagePreview)
 
       const storedIngredients = localStorage.getItem('ingredients')
       if (storedIngredients) setIngredients(JSON.parse(storedIngredients))
@@ -109,6 +111,7 @@ function App() {
   useEffect(() => {
     try {
       localStorage.setItem('activeTab', activeTab)
+      console.log('Saved activeTab to localStorage:', activeTab)
     } catch (error) {
       console.warn('Error saving activeTab to localStorage:', error)
     }
