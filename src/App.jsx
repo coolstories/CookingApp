@@ -191,6 +191,7 @@ function App() {
             preferences={preferences}
             recipes={recipes}
             setRecipes={setRecipes}
+            setPantry={setPantry}
           />
         )
       case 'history':

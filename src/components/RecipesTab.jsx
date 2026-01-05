@@ -90,7 +90,7 @@ function RecipeChecklist({ isOpen, steps, currentStep }) {
   )
 }
 
-function RecipesTab({ pantry, preferences, recipes, setRecipes }) {
+function RecipesTab({ pantry, preferences, recipes, setRecipes, setPantry }) {
   const [loading, setLoading] = useState(false)
   const [selectedRecipe, setSelectedRecipe] = useState(null)
   const [detailedRecipe, setDetailedRecipe] = useState(null)
@@ -114,6 +114,14 @@ function RecipesTab({ pantry, preferences, recipes, setRecipes }) {
     'Ranking results...'
   ]
 
+  const clearPantry = () => {
+    if (window.confirm('Are you sure you want to delete all items from your pantry?')) {
+      setPantry([])
+      setRecipes([])
+      setError(null)
+    }
+  }
+
   const findRecipes = async () => {
     if (pantry.length === 0) {
       setError('Add ingredients to your pantry first')
@@ -124,6 +132,9 @@ function RecipesTab({ pantry, preferences, recipes, setRecipes }) {
       setError('Daily recipe search limit reached (5/day). Try again tomorrow!')
       return
     }
+
+    console.log('Starting recipe search with pantry:', pantry)
+    console.log('Searches remaining:', searchesRemaining)
 
     setLoading(true)
     setError(null)
@@ -143,6 +154,8 @@ function RecipesTab({ pantry, preferences, recipes, setRecipes }) {
 
     try {
       const ingredientList = pantry.map(p => p.name).join(', ')
+      console.log('Ingredient list for API:', ingredientList)
+      
       const enabledPrefs = preferences.filter(p => p.enabled)
       
       let prefPrompt = ''
@@ -157,8 +170,10 @@ function RecipesTab({ pantry, preferences, recipes, setRecipes }) {
       
       if (typeof AbortController !== 'undefined') {
         controller = new AbortController()
-        timeoutId = setTimeout(() => controller.abort(), 30000)
+        timeoutId = setTimeout(() => controller.abort(), 90000)
       }
+
+      console.log('Making API call to OpenRouter...')
 
       // Build preference constraints
       let prefConstraints = ''
@@ -233,25 +248,47 @@ Return ONLY a JSON array:
         clearTimeout(timeoutId)
       }
 
-      if (!response.ok) throw new Error('Failed to find recipes')
+      if (!response.ok) {
+        console.error('API response not OK:', response.status, response.statusText)
+        throw new Error('Failed to find recipes')
+      }
 
       const data = await response.json()
+      console.log('API response data:', data)
+      
       const content = data.choices[0]?.message?.content
+      console.log('API content:', content)
 
       let parsedRecipes = []
       try {
         const jsonMatch = content.match(/\[[\s\S]*\]/)
-        if (jsonMatch) parsedRecipes = JSON.parse(jsonMatch[0])
-      } catch {}
+        console.log('JSON match:', jsonMatch)
+        if (jsonMatch) {
+          parsedRecipes = JSON.parse(jsonMatch[0])
+          console.log('Parsed recipes:', parsedRecipes)
+        }
+      } catch (error) {
+        console.error('JSON parsing error:', error)
+      }
+
+      if (!parsedRecipes || parsedRecipes.length === 0) {
+        console.warn('No recipes parsed from response')
+        setError('No recipes found. Try different ingredients.')
+        setShowChecklist(false)
+        setLoading(false)
+        return
+      }
 
       await new Promise(resolve => setTimeout(resolve, 500))
       setShowChecklist(false)
       setRecipes(parsedRecipes)
+      console.log('Recipes set successfully:', parsedRecipes)
 
       // Increment daily recipe search counter
       incrementRecipeSearchesToday()
       setSearchesRemaining(DAILY_RECIPE_LIMIT - getRecipeSearchesToday())
     } catch (err) {
+      console.error('Recipe search error:', err)
       setShowChecklist(false)
       setError(err.name === 'AbortError' ? 'Request timed out.' : 'Failed to find recipes.')
     } finally {
@@ -351,7 +388,15 @@ If canMake is true, "need" should be empty. If false, list what's missing with q
       ) : (
         <div className="space-y-4">
           <div className="bg-white rounded-2xl p-4">
-            <h3 className="font-semibold text-gray-900 mb-3">Your Pantry ({pantry.length})</h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold text-gray-900">Your Pantry ({pantry.length})</h3>
+              <button
+                onClick={clearPantry}
+                className="px-3 py-1 bg-red-100 text-red-600 rounded-lg text-sm font-medium hover:bg-red-200 transition-colors"
+              >
+                Clear All
+              </button>
+            </div>
             <div className="flex flex-wrap gap-2">
               {pantry.map((item, idx) => (
                 <span key={idx} className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
