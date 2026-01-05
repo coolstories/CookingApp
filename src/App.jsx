@@ -59,6 +59,15 @@ function App() {
 
       const storedPreferences = localStorage.getItem('preferences')
       if (storedPreferences) setPreferences(JSON.parse(storedPreferences))
+
+      const storedActiveTab = localStorage.getItem('activeTab')
+      if (storedActiveTab) setActiveTab(storedActiveTab)
+
+      const storedImagePreview = localStorage.getItem('imagePreview')
+      if (storedImagePreview) setImagePreview(storedImagePreview)
+
+      const storedIngredients = localStorage.getItem('ingredients')
+      if (storedIngredients) setIngredients(JSON.parse(storedIngredients))
     } catch (error) {
       console.warn('Error loading data from localStorage:', error)
     }
@@ -96,6 +105,30 @@ function App() {
       console.warn('Error saving preferences to localStorage:', error)
     }
   }, [preferences])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('activeTab', activeTab)
+    } catch (error) {
+      console.warn('Error saving activeTab to localStorage:', error)
+    }
+  }, [activeTab])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('imagePreview', imagePreview || '')
+    } catch (error) {
+      console.warn('Error saving imagePreview to localStorage:', error)
+    }
+  }, [imagePreview])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('ingredients', JSON.stringify(ingredients))
+    } catch (error) {
+      console.warn('Error saving ingredients to localStorage:', error)
+    }
+  }, [ingredients])
 
   const addToHistory = (scan) => {
     setScanHistory(prev => [scan, ...prev])
@@ -167,7 +200,7 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f2f2f7] flex flex-col max-w-md mx-auto relative">
+    <div className="min-h-screen bg-[#f2f2f7] flex flex-col max-w-md mx-auto relative overflow-x-hidden">
       {/* Onboarding Overlay */}
       {showOnboarding && (
         <Onboarding 
@@ -176,11 +209,11 @@ function App() {
         />
       )}
 
-      <main className="flex-1 overflow-auto pb-20">
+      <main className="flex-1 overflow-auto pb-20 overflow-x-hidden">
         {renderTab()}
       </main>
 
-      <nav className="fixed bottom-0 left-0 right-0 bg-white/80 ios-blur border-t border-gray-200 safe-area-bottom max-w-md mx-auto">
+      <nav className="fixed bottom-0 left-0 right-0 bg-white/80 ios-blur border-t border-gray-200 safe-area-bottom max-w-md mx-auto overflow-x-hidden">
         <div className="flex justify-around items-center h-16">
           {tabs.map((tab) => {
             const Icon = tab.icon

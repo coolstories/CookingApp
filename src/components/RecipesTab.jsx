@@ -207,8 +207,16 @@ CRITICAL RULES:
 
 Suggest exactly 5 delicious recipes using ONLY available ingredients. Each recipe must have a different meal type: one breakfast, one lunch, one dinner, one snack, and one dessert.
 
+IMPORTANT: Make steps VERY detailed with specific timing and instructions:
+- Include exact cooking times (e.g., "Heat pan for 2 minutes over medium heat")
+- Include specific temperatures (e.g., "Cook at 375°F for 15 minutes")
+- Include visual cues (e.g., "Cook until golden brown and crispy")
+- Include specific techniques (e.g., "Stir continuously for 3 minutes to prevent burning")
+- Include pan sizes and heat levels (e.g., "Use medium-high heat in a 10-inch skillet")
+- Include preparation details (e.g., "Dice onions into 1/4-inch pieces")
+
 Return ONLY a JSON array:
-[{"name": "Recipe Name", "description": "Brief description", "time": "30 mins", "servings": "4", "difficulty": "Easy", "mealType": "Breakfast", "ingredients": ["2 cups item1", "1 cup item2"], "tips": ["Tip 1"], "steps": ["Step 1", "Step 2"]}]`
+[{"name": "Recipe Name", "description": "Brief description", "time": "30 mins", "servings": "4", "difficulty": "Easy", "mealType": "Breakfast", "ingredients": ["2 cups item1", "1 cup item2"], "tips": ["Tip 1"], "steps": ["Detailed step with timing and specific instructions", "Another detailed step with exact time and technique"]}]`
             }]
           })
         }),
@@ -531,10 +539,10 @@ If canMake is true, "need" should be empty. If false, list what's missing with q
                   onClick={() => setInteractiveRecipe(recipe)}
                   className="bg-white rounded-2xl p-4 border border-gray-200 hover:border-orange-300 hover:shadow-lg transition-all cursor-pointer"
                 >
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="font-bold text-gray-900 text-lg">{recipe.name}</h3>
-                    <div className="flex gap-2">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  <div className="flex items-start gap-2 mb-2">
+                    <h3 className="font-bold text-gray-900 text-lg flex-1 leading-tight">{recipe.name}</h3>
+                    <div className="flex gap-1 flex-shrink-0">
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${
                         recipe.mealType?.toLowerCase() === 'breakfast' ? 'bg-yellow-100 text-yellow-700' :
                         recipe.mealType?.toLowerCase() === 'lunch' ? 'bg-blue-100 text-blue-700' :
                         recipe.mealType?.toLowerCase() === 'dinner' ? 'bg-purple-100 text-purple-700' :
@@ -543,7 +551,7 @@ If canMake is true, "need" should be empty. If false, list what's missing with q
                       }`}>
                         {recipe.mealType || 'Other'}
                       </span>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${
                         recipe.difficulty === 'Easy' ? 'bg-green-100 text-green-700' :
                         recipe.difficulty === 'Medium' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
                       }`}>
@@ -551,10 +559,10 @@ If canMake is true, "need" should be empty. If false, list what's missing with q
                       </span>
                     </div>
                   </div>
-                  <p className="text-gray-600 text-sm mb-3">{recipe.description}</p>
+                  <p className="text-gray-600 text-sm mb-3 line-clamp-2">{recipe.description}</p>
                   <div className="flex items-center gap-4 text-sm text-gray-500">
-                    <div className="flex items-center gap-1"><Clock size={16} />{recipe.time}</div>
-                    <div className="flex items-center gap-1"><Users size={16} />{recipe.servings}</div>
+                    <div className="flex items-center gap-1 whitespace-nowrap"><Clock size={16} />{recipe.time}</div>
+                    <div className="flex items-center gap-1 whitespace-nowrap"><Users size={16} />{recipe.servings}</div>
                   </div>
                 </div>
               ))}
@@ -567,17 +575,17 @@ If canMake is true, "need" should be empty. If false, list what's missing with q
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl max-h-[80vh] overflow-y-auto">
             <div className="flex items-start justify-between mb-4">
-              <h3 className="text-2xl font-bold text-gray-900">{selectedRecipe.name}</h3>
-              <button onClick={() => setSelectedRecipe(null)} className="text-gray-400 hover:text-gray-600">
+              <h3 className="text-xl font-bold text-gray-900 flex-1 mr-2 leading-tight">{selectedRecipe.name}</h3>
+              <button onClick={() => setSelectedRecipe(null)} className="text-gray-400 hover:text-gray-600 flex-shrink-0">
                 <X size={24} />
               </button>
             </div>
-            <p className="text-gray-600 text-sm mb-4">{selectedRecipe.description}</p>
+            <p className="text-gray-600 text-sm mb-4 line-clamp-3">{selectedRecipe.description}</p>
 
-            <div className="flex gap-4 mb-4 text-sm text-gray-600">
-              <div className="flex items-center gap-1"><Clock size={16} />{selectedRecipe.time}</div>
-              <div className="flex items-center gap-1"><Users size={16} />{selectedRecipe.servings}</div>
-              <div className="flex items-center gap-1"><Flame size={16} />{selectedRecipe.difficulty}</div>
+            <div className="flex flex-wrap gap-3 mb-4 text-sm text-gray-600">
+              <div className="flex items-center gap-1 whitespace-nowrap"><Clock size={16} />{selectedRecipe.time}</div>
+              <div className="flex items-center gap-1 whitespace-nowrap"><Users size={16} />{selectedRecipe.servings}</div>
+              <div className="flex items-center gap-1 whitespace-nowrap"><Flame size={16} />{selectedRecipe.difficulty}</div>
             </div>
 
             {selectedRecipe.ingredients && selectedRecipe.ingredients.length > 0 && (
@@ -585,9 +593,9 @@ If canMake is true, "need" should be empty. If false, list what's missing with q
                 <h4 className="font-semibold text-gray-900">Ingredients</h4>
                 <ul className="space-y-2">
                   {selectedRecipe.ingredients.map((ing, idx) => (
-                    <li key={idx} className="flex items-center gap-2 text-sm text-gray-700">
-                      <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                      {ing}
+                    <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
+                      <span className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1.5"></span>
+                      <span className="flex-1">{ing}</span>
                     </li>
                   ))}
                 </ul>

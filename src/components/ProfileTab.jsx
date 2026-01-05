@@ -386,7 +386,7 @@ function ProfileTab({ preferences, setPreferences, onRedoOnboarding }) {
                   <div className="space-y-2 text-sm text-gray-700">
                     <p><strong>Q: How do I scan ingredients?</strong><br/>A: Go to Scanner tab, take a photo, and the AI will detect ingredients.</p>
                     <p><strong>Q: Can I manually add ingredients?</strong><br/>A: Yes, use the manual entry field in the Scanner tab.</p>
-                    <p><strong>Q: How many scans per day?</strong><br/>A: 5 scans daily. Tap Scanner title 7 times for admin mode (unlimited).</p>
+                    <p><strong>Q: How many scans per day?</strong><br/>A: 5 scans daily.</p>
                   </div>
                 </div>
                 <button 

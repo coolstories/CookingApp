@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Clock, Users, Flame, Play, Pause, RotateCcw, CheckCircle2, Circle, ChefHat, Timer, Volume2, VolumeX, X } from 'lucide-react'
+import { Clock, Users, Flame, Play, Pause, RotateCcw, CheckCircle2, Circle, ChefHat, Timer, Volume2, VolumeX, X, AlertCircle, Thermometer, Eye, Hand, Utensils } from 'lucide-react'
 
 function InteractiveRecipe({ recipe, onClose }) {
   const [currentStep, setCurrentStep] = useState(0)
@@ -8,6 +8,8 @@ function InteractiveRecipe({ recipe, onClose }) {
   const [isMuted, setIsMuted] = useState(false)
   const [activeTimer, setActiveTimer] = useState(null)
   const [showConfetti, setShowConfetti] = useState(false)
+  const [stepNotes, setStepNotes] = useState({})
+  const [stepImages, setStepImages] = useState({})
   const audioRef = useRef(null)
 
   // Simple timer sound initialization
@@ -48,10 +50,16 @@ function InteractiveRecipe({ recipe, onClose }) {
       
       let totalSeconds = 0
       timeMatches.forEach(match => {
-        const parts = match.match(/(\d+)\s*(second|seconds|sec|secs|minute|minutes|min|mins|hour|hours|hr|hrs)/i)
+        const parts = match.match(/(\d+)\s*(\w+)/)
         if (parts) {
-          const [, amount, unit] = parts
-          totalSeconds += parseInt(amount) * (timeMap[unit.toLowerCase()] || 60)
+          const [, num, unit] = parts
+          const unitLower = unit.toLowerCase()
+          for (const [key, value] of Object.entries(timeMap)) {
+            if (unitLower.includes(key)) {
+              totalSeconds += parseInt(num) * value
+              break
+            }
+          }
         }
       })
       
@@ -59,6 +67,92 @@ function InteractiveRecipe({ recipe, onClose }) {
     } catch (error) {
       console.warn('Time extraction failed:', error)
       return null
+    }
+  }
+
+  // Parse step details for enhanced interactivity
+  const parseStepDetails = (step) => {
+    if (!step) return {
+      text: step,
+      hasTimer: false,
+      hasTemperature: false,
+      hasVisual: false,
+      hasAction: false,
+      temperature: null,
+      action: null,
+      visual: null
+    }
+
+    const details = {
+      text: step,
+      hasTimer: false,
+      hasTemperature: false,
+      hasVisual: false,
+      hasAction: false,
+      temperature: null,
+      action: null,
+      visual: null
+    }
+
+    // Check for timer
+    details.hasTimer = extractTimeFromStep(step) !== null
+
+    // Check for temperature
+    const tempMatch = step.match(/(\d+)\s*(degrees?|°|F|C)/gi)
+    if (tempMatch) {
+      details.hasTemperature = true
+      details.temperature = tempMatch[0]
+    }
+
+    // Check for visual cues
+    const visualCues = ['golden brown', 'bubbly', 'simmering', 'boiling', 'melted', 'caramelized', 'crispy', 'tender']
+    details.hasVisual = visualCues.some(cue => step.toLowerCase().includes(cue))
+    if (details.hasVisual) {
+      const foundCue = visualCues.find(cue => step.toLowerCase().includes(cue))
+      details.visual = foundCue
+    }
+
+    // Check for specific actions
+    const actions = ['stir', 'mix', 'whisk', 'fold', 'beat', 'chop', 'dice', 'mince', 'grate', 'slice', 'cut', 'sear', 'sauté', 'fry', 'bake', 'roast', 'grill', 'steam', 'boil', 'simmer']
+    details.hasAction = actions.some(action => step.toLowerCase().includes(action))
+    if (details.hasAction) {
+      const foundAction = actions.find(action => step.toLowerCase().includes(action))
+      details.action = foundAction
+    }
+
+    return details
+  }
+
+  // Add step note
+  const addStepNote = (stepIndex, note) => {
+    setStepNotes(prev => ({
+      ...prev,
+      [stepIndex]: note
+    }))
+  }
+
+  // Navigate to next step and mark current as complete
+  const handleNextStep = () => {
+    // Mark current step as completed if not already completed
+    if (!completedSteps.includes(currentStep)) {
+      setCompletedSteps(prev => [...prev, currentStep])
+    }
+    
+    // Move to next step
+    setCurrentStep(Math.min((recipe.steps?.length || 1) - 1, currentStep + 1))
+  }
+
+  // Navigate to previous step
+  const handlePrevStep = () => {
+    setCurrentStep(Math.max(0, currentStep - 1))
+  }
+
+  // Toggle step completion for manual checking
+  const toggleStepComplete = (idx) => {
+    if (completedSteps.includes(idx)) {
+      setCompletedSteps(prev => prev.filter(i => i !== idx))
+    } else {
+      setCompletedSteps(prev => [...prev, idx])
     }
   }
 
@@ -144,20 +238,6 @@ function InteractiveRecipe({ recipe, onClose }) {
       }
     } catch (error) {
       console.warn('Timer reset failed:', error)
-    }
-  }
-
-  const toggleStepComplete = (stepIdx) => {
-    try {
-      setCompletedSteps(prev => {
-        if (prev.includes(stepIdx)) {
-          return prev.filter(i => i !== stepIdx)
-        } else {
-          return [...prev, stepIdx]
-        }
-      })
-    } catch (error) {
-      console.warn('Step toggle failed:', error)
     }
   }
 
@@ -301,6 +381,7 @@ function InteractiveRecipe({ recipe, onClose }) {
                 const timer = timers[idx]
                 const isCompleted = completedSteps.includes(idx)
                 const isCurrent = idx === currentStep
+                const stepDetails = parseStepDetails(step)
                 
                 return (
                   <div
@@ -325,7 +406,41 @@ function InteractiveRecipe({ recipe, onClose }) {
                       
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="font-semibold text-gray-900">Step {idx + 1}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-gray-900">Step {idx + 1}</span>
+                            
+                            {/* Step indicators */}
+                            <div className="flex items-center gap-1">
+                              {stepDetails.hasTimer && (
+                                <div className="flex items-center gap-1 px-2 py-1 bg-orange-100 rounded-full">
+                                  <Timer size={12} className="text-orange-600" />
+                                  <span className="text-xs font-medium text-orange-600">Timer</span>
+                                </div>
+                              )}
+                              
+                              {stepDetails.hasTemperature && (
+                                <div className="flex items-center gap-1 px-2 py-1 bg-red-100 rounded-full">
+                                  <Thermometer size={12} className="text-red-600" />
+                                  <span className="text-xs font-medium text-red-600">{stepDetails.temperature}</span>
+                                </div>
+                              )}
+                              
+                              {stepDetails.hasVisual && (
+                                <div className="flex items-center gap-1 px-2 py-1 bg-purple-100 rounded-full">
+                                  <Eye size={12} className="text-purple-600" />
+                                  <span className="text-xs font-medium text-purple-600">{stepDetails.visual}</span>
+                                </div>
+                              )}
+                              
+                              {stepDetails.hasAction && (
+                                <div className="flex items-center gap-1 px-2 py-1 bg-blue-100 rounded-full">
+                                  <Hand size={12} className="text-blue-600" />
+                                  <span className="text-xs font-medium text-blue-600">{stepDetails.action}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          
                           {timer && (
                             <div className="flex items-center gap-2">
                               <Timer size={16} className="text-orange-500" />
@@ -341,6 +456,21 @@ function InteractiveRecipe({ recipe, onClose }) {
                         }`}>
                           {step}
                         </p>
+
+                        {/* Step notes section */}
+                        <div className="mb-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <AlertCircle size={14} className="text-gray-400" />
+                            <span className="text-xs text-gray-500">Add notes about this step:</span>
+                          </div>
+                          <textarea
+                            value={stepNotes[idx] || ''}
+                            onChange={(e) => addStepNote(idx, e.target.value)}
+                            placeholder="e.g., Adjust heat if needed, watch for bubbles..."
+                            className="w-full p-2 text-xs border border-gray-200 rounded-lg resize-none h-16 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            rows={2}
+                          />
+                        </div>
                         
                         {timer && (
                           <div className="flex items-center gap-2">
@@ -396,18 +526,18 @@ function InteractiveRecipe({ recipe, onClose }) {
           {/* Navigation */}
           <div className="flex gap-3 mt-6">
             <button
-              onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
+              onClick={handlePrevStep}
               disabled={currentStep === 0}
               className="flex-1 px-4 py-3 rounded-xl bg-gray-200 text-gray-700 font-medium hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Previous Step
             </button>
             <button
-              onClick={() => setCurrentStep(Math.min((recipe.steps?.length || 1) - 1, currentStep + 1))}
+              onClick={handleNextStep}
               disabled={currentStep >= (recipe.steps?.length || 1) - 1}
               className="flex-1 px-4 py-3 rounded-xl bg-orange-500 text-white font-medium hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Next Step
+              Next Step ✓
             </button>
           </div>
         </div>

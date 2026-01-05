@@ -130,9 +130,9 @@ function ScannerTab({ addToHistory, pantry, setPantry, ingredients, setIngredien
 
   const scanSteps = [
     'Processing image...',
-    'Detecting food items...',
-    'Analyzing ingredients...',
-    'Finalizing results...'
+    'Analyzing brands & quantities...',
+    'Identifying specific items...',
+    'Finalizing detailed results...'
   ]
 
   const compressImage = (file) => {
@@ -232,11 +232,24 @@ function ScannerTab({ addToHistory, pantry, setPantry, ingredients, setIngredien
               content: [
                 {
                   type: 'text',
-                  text: `Identify EVERY food item in this image. CRITICAL RULES:
-1. If it's a PREPARED/COOKED DISH (cake, pizza, burger, sandwich, soup, pancakes, pasta, etc), list it AS-IS. DO NOT break it down into ingredients.
-2. If it's RAW INGREDIENTS (vegetables, fruits, raw meat, spices), list each one.
-3. Capitalize first letter of each item.
-${settings.unsureIngredients ? '4. Add "confident": true if you\'re sure about the item, "confident": false if you\'re unsure or guessing.' : ''}
+                  text: `Identify EVERY food item in this image with maximum detail. CRITICAL RULES:
+1. If it's a PREPARED/COOKED DISH (cake, pizza, burger, sandwich, soup, pancakes, pasta, etc), list it AS-IS with details about size/portion.
+2. If it's RAW INGREDIENTS (vegetables, fruits, raw meat, spices), list each one with specific details.
+3. For PACKAGED ITEMS: Include brand name if visible, specific product name, and estimated quantity remaining.
+4. For FRESH PRODUCE: Include variety/type if identifiable (e.g., "Roma tomato" not just "tomato").
+5. For LIQUIDS: Estimate volume in appropriate units (ml, oz, cups) or fraction of container remaining.
+6. For SPICES/SEASONINGS: Include brand if visible and estimate amount (pinch, teaspoon, fraction of jar).
+7. Capitalize first letter of each item.
+8. DO NOT include any positions, locations, coordinates, or spatial information. ONLY return ingredient names and quantities.
+9. Be as specific as possible with quantities - use fractions, percentages, or measurements.
+
+Examples:
+- "Heinz Ketchup 0.3 bottle remaining"
+- "Organic Roma tomatoes 3 medium"
+- "Tabasco hot sauce 0.45 bottle left" 
+- "Whole milk 1.2 liters"
+- "Kraft shredded cheddar cheese 0.7 bag"
+${settings.unsureIngredients ? '10. Add "confident": true if you\'re sure about the item, "confident": false if you\'re unsure or guessing.' : ''}
 
 Return ONLY this JSON (no markdown, no extra text):
 ${settings.unsureIngredients 
@@ -359,7 +372,16 @@ ${settings.unsureIngredients
             parsedIngredients = { ingredients: filtered.map(({ name, quantity }) => ({ name, quantity })) }
           }
         } else {
-          throw new Error('No valid ingredients found')
+          // Check if AI returned a message about no food
+          if (fullText.toLowerCase().includes('no food') || 
+              fullText.toLowerCase().includes('no ingredients') ||
+              fullText.toLowerCase().includes('cannot identify') ||
+              fullText.toLowerCase().includes('unable to detect') ||
+              fullText.toLowerCase().includes('no recognizable food')) {
+            throw new Error('No food detected in this photo. Please try taking a clearer photo of food items.')
+          } else {
+            throw new Error('No valid ingredients found')
+          }
         }
       } catch (parseErr) {
         console.error('Parse error:', parseErr, 'Full text:', fullText)
@@ -391,20 +413,23 @@ ${settings.unsureIngredients
   }
 
   const addToPantry = (ingredient) => {
-    if (!pantry.some(p => p.name.toLowerCase() === ingredient.name.toLowerCase())) {
-      setPantry([...pantry, ingredient])
+    const simplifiedName = simplifyIngredientName(ingredient.name)
+    const simplifiedIngredient = { ...ingredient, name: simplifiedName }
+    
+    if (!pantry.some(p => p.name.toLowerCase() === simplifiedName.toLowerCase())) {
+      setPantry([...pantry, simplifiedIngredient])
     }
   }
 
   const storeAllIngredients = () => {
     if (!ingredients) return
-    const newItems = ingredients.ingredients.filter(
-      ing => !pantry.some(p => p.name.toLowerCase() === ing.name.toLowerCase())
-    )
+    const newItems = ingredients.ingredients
+      .filter(ing => !pantry.some(p => p.name.toLowerCase() === simplifyIngredientName(ing.name).toLowerCase()))
+      .map(ing => ({ ...ing, name: simplifyIngredientName(ing.name) }))
     setPantry([...pantry, ...newItems])
   }
 
-  const isIngredientStored = (name) => pantry.some(p => p.name.toLowerCase() === name.toLowerCase())
+  const isIngredientStored = (name) => pantry.some(p => p.name.toLowerCase() === simplifyIngredientName(name).toLowerCase())
 
   const handleManualInputChange = (value) => {
     setManualInput(value)
@@ -458,16 +483,77 @@ ${settings.unsureIngredients
     setConfirmedIngredients([])
   }
 
+  // Simplify ingredient names for pantry storage
+  const simplifyIngredientName = (fullName) => {
+    // Remove brands, quantities, and detailed descriptions
+    let simplified = fullName
+    
+    // Remove brand names (common patterns)
+    simplified = simplified.replace(/\b(Heinz|Kraft|Tabasco|McCormick|French's|Hidden Valley|Ragú|Prego|Classico|Daisy|Organic|Nature's Own|Wonder Bread|Oscar Mayer|Tyson|Perdue|Foster Farms)\b/gi, '').trim()
+    
+    // Remove quantities and measurements
+    simplified = simplified.replace(/\b\d+\.?\d*\s*(?:bottle|bag|jar|box|pack|can|carton|liter|ml|oz|lb|kg|g|cup|tbsp|tsp|pinch|dash|medium|large|small|pieces|slices|clove|head|bunch|stalk|container|package|remaining|left)\b/gi, '').trim()
+    
+    // Remove fractions and percentages
+    simplified = simplified.replace(/\b\d+\/\d+\b/g, '').trim()
+    simplified = simplified.replace(/\b\d+\.?\d*%\b/g, '').trim()
+    
+    // Remove descriptive words that aren't essential
+    simplified = simplified.replace(/\b(fresh|frozen|canned|dried|cooked|raw|grilled|baked|fried|roasted|steamed|boiled|chopped|sliced|diced|shredded|ground|minced|crushed|whole|halved|quartered|organic|natural|homemade|store-bought|premium|select|original|classic|traditional|spicy|mild|hot|sweet|sour|tangy|creamy|crunchy|soft|hard|ripe|unripe|green|red|yellow|orange|purple|white|black|brown)\b/gi, '').trim()
+    
+    // Remove "with" and everything after it
+    simplified = simplified.replace(/\bwith\b.*/i, '').trim()
+    
+    // Remove extra spaces and clean up
+    simplified = simplified.replace(/\s+/g, ' ').trim()
+    
+    // If result is empty or too short, return original
+    if (simplified.length < 3) {
+      return fullName.split(' ')[0] // Return first word
+    }
+    
+    return simplified
+  }
+
+  // Check if ingredients are sufficient for good recipes
+  const areIngredientsSufficientForRecipes = (ingredients) => {
+    if (!ingredients || ingredients.length === 0) return false
+    
+    // Basic cooking categories
+    const categories = {
+      protein: ['chicken', 'beef', 'pork', 'fish', 'salmon', 'tuna', 'shrimp', 'tofu', 'eggs', 'beans', 'lentils', 'chickpeas'],
+      vegetables: ['tomato', 'onion', 'garlic', 'potato', 'carrot', 'broccoli', 'spinach', 'lettuce', 'pepper', 'mushroom', 'zucchini'],
+      grains: ['rice', 'pasta', 'bread', 'flour', 'oats', 'quinoa', 'couscous'],
+      dairy: ['milk', 'cheese', 'butter', 'cream', 'yogurt'],
+      sauces: ['sauce', 'ketchup', 'mustard', 'mayo', 'soy sauce', 'oil', 'vinegar'],
+      spices: ['salt', 'pepper', 'basil', 'oregano', 'thyme', 'rosemary', 'cumin', 'paprika']
+    }
+    
+    const simplifiedIngredients = ingredients.map(ing => simplifyIngredientName(ing.name).toLowerCase())
+    
+    // Count how many categories we have
+    let categoryCount = 0
+    for (const [category, items] of Object.entries(categories)) {
+      if (simplifiedIngredients.some(ing => items.some(item => ing.includes(item)))) {
+        categoryCount++
+      }
+    }
+    
+    // Need at least 3 different categories for decent recipes
+    // Or at least 5 ingredients total
+    return categoryCount >= 3 || simplifiedIngredients.length >= 5
+  }
+
   return (
     <div className="p-4">
       <div className="safe-area-top pt-4 pb-6">
         <div className="flex items-center justify-between">
           <div onClick={handleTitleTap} className="cursor-pointer select-none">
             <h1 className="text-3xl font-bold text-gray-900">Scanner</h1>
-            <p className="text-gray-500 mt-1">Identify ingredients from photos</p>
+            <p className="text-gray-500 mt-1">Identify ingredients, brands, and quantities from photos</p>
           </div>
-          <div className={`px-4 py-2 rounded-full font-semibold text-sm ${adminMode ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
-            {adminMode ? '∞ Admin' : `${scansRemaining}/5 scans`}
+          <div className="px-4 py-2 rounded-full font-semibold text-sm bg-blue-100 text-blue-700">
+            {adminMode ? '∞' : `${scansRemaining}/5 scans`}
           </div>
         </div>
       </div>
@@ -476,17 +562,19 @@ ${settings.unsureIngredients
         <div className="space-y-4">
           <button
             onClick={() => cameraInputRef.current?.click()}
-            className="w-full bg-blue-500 text-white rounded-2xl p-6 flex items-center justify-center active:bg-blue-600 transition-colors shadow-lg shadow-blue-500/25"
+            className="w-full bg-blue-500 text-white rounded-2xl p-6 flex items-center justify-center gap-3 active:bg-blue-600 transition-colors shadow-lg shadow-blue-500/25"
           >
             <Camera size={28} />
+            <span className="text-lg font-semibold">Take Photo</span>
           </button>
           <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={handleFileSelect} className="hidden" />
 
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="w-full bg-white text-gray-700 rounded-2xl p-6 flex items-center justify-center active:bg-gray-50 transition-colors border border-gray-200"
+            className="w-full bg-white text-gray-700 rounded-2xl p-6 flex items-center justify-center gap-3 active:bg-gray-50 transition-colors border border-gray-200"
           >
             <Upload size={28} />
+            <span className="text-lg font-semibold">Upload Photo</span>
           </button>
           <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
 
@@ -654,6 +742,29 @@ ${settings.unsureIngredients
                   Store All
                 </button>
               </div>
+              
+              {!areIngredientsSufficientForRecipes(ingredients.ingredients) && (
+                <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-orange-600 text-sm">🍳</span>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-orange-900 mb-1">Limited Recipe Options</h4>
+                      <p className="text-orange-700 text-sm mb-3">
+                        These ingredients alone may not be enough for complete recipes. Try adding more ingredients or use our "Almost Recipes" feature for creative ideas!
+                      </p>
+                      <button 
+                        onClick={() => setShowAlmostRecipes(true)}
+                        className="bg-orange-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-orange-600 transition-colors"
+                      >
+                        Try Almost Recipes
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               <div className="space-y-3">
                 {ingredients.ingredients.map((item, index) => (
                   <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl justify-between">
