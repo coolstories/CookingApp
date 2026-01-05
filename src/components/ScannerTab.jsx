@@ -53,7 +53,6 @@ function ScannerTab({ addToHistory, pantry, setPantry, ingredients, setIngredien
   const [confirmedIngredients, setConfirmedIngredients] = useState([])
   const [uncertainIngredients, setUncertainIngredients] = useState([])
   const [settings, setSettings] = useState({ unsureIngredients: false })
-  const [ingredientPositions, setIngredientPositions] = useState([])
   const [adminMode, setAdminMode] = useState(false)
   const [tapCount, setTapCount] = useState(0)
   const [showAdminPassword, setShowAdminPassword] = useState(false)
@@ -188,7 +187,6 @@ function ScannerTab({ addToHistory, pantry, setPantry, ingredients, setIngredien
     setImagePreview(null)
     setIngredients(null)
     setError(null)
-    setIngredientPositions([])
   }
 
   const scanIngredients = async () => {
@@ -201,7 +199,6 @@ function ScannerTab({ addToHistory, pantry, setPantry, ingredients, setIngredien
 
     setLoading(true)
     setError(null)
-    setIngredientPositions([])
     setShowScanning(true)
     setCurrentStep(0)
     setIngredients(null)
@@ -239,17 +236,12 @@ function ScannerTab({ addToHistory, pantry, setPantry, ingredients, setIngredien
 1. If it's a PREPARED/COOKED DISH (cake, pizza, burger, sandwich, soup, pancakes, pasta, etc), list it AS-IS. DO NOT break it down into ingredients.
 2. If it's RAW INGREDIENTS (vegetables, fruits, raw meat, spices), list each one.
 3. Capitalize first letter of each item.
-4. For each item, provide PRECISE bounding box coordinates as [x_center, y_center, width, height] where:
-   - x_center, y_center are center points (0-100% range from top-left)
-   - width, height are the size of the bounding box (0-100% range)
-   - Be VERY ACCURATE with positioning - place labels exactly where the items are
-5. ONLY include items you can clearly see and identify
-${settings.unsureIngredients ? '6. Add "confident": true if you\'re 100% sure about the item and position, "confident": false if you\'re unsure.' : ''}
+${settings.unsureIngredients ? '4. Add "confident": true if you\'re sure about the item, "confident": false if you\'re unsure or guessing.' : ''}
 
 Return ONLY this JSON (no markdown, no extra text):
 ${settings.unsureIngredients 
-  ? '{"ingredients": [{"Name": "Tomato", "Quantity": "2", "bounds": [25, 30, 15, 20], "confident": true}, {"Name": "Cheese", "Quantity": "1", "bounds": [60, 45, 20, 25], "confident": false}]}' 
-  : '{"ingredients": [{"Name": "Tomato", "Quantity": "2", "bounds": [25, 30, 15, 20]}, {"Name": "Cheese", "Quantity": "1", "bounds": [60, 45, 20, 25]}]}'}`
+  ? '{"ingredients": [{"Name": "Item1", "Quantity": "1", "confident": true}, {"Name": "Item2", "Quantity": "1", "confident": false}]}' 
+  : '{"ingredients": [{"Name": "Item1", "Quantity": "1"}, {"Name": "Item2", "Quantity": "1"}]}'}`
                 },
                 {
                   type: 'image_url',
@@ -309,27 +301,21 @@ ${settings.unsureIngredients
         if (jsonMatch) {
           try {
             const cleanJson = jsonMatch[0].replace(/,\s*]/g, ']').replace(/,\s*}/g, '}')
-            console.log('AI Response JSON:', cleanJson)
             const parsed = JSON.parse(cleanJson)
             if (parsed.ingredients && Array.isArray(parsed.ingredients)) {
               for (const ing of parsed.ingredients) {
-                console.log('Processing ingredient:', ing)
                 allIngredients.push({
                   name: ing.name || ing.Name || 'Unknown',
                   quantity: ing.quantity || ing.Quantity || '1',
-                  confident: ing.confident !== false, // Default to true if not specified
-                  bounds: ing.bounds || ing.Bounds || [Math.random() * 80 + 10, Math.random() * 80 + 10, 10, 10] // Random fallback bounds
+                  confident: ing.confident !== false // Default to true if not specified
                 })
               }
             }
-          } catch (parseError) {
-            console.error('JSON parse error:', parseError)
-          }
+          } catch {}
         }
         
         // Fallback regex parsing if JSON parse failed
         if (allIngredients.length === 0) {
-          console.log('Using fallback regex parsing')
           const patterns = [
             /\{\s*"Name"\s*:\s*"([^"]+)"\s*,\s*"Quantity"\s*:\s*"([^"]+)"/gi,
             /\{\s*"name"\s*:\s*"([^"]+)"\s*,\s*"quantity"\s*:\s*"([^"]+)"/gi,
@@ -341,12 +327,7 @@ ${settings.unsureIngredients
               const name = match[1]
               const quantity = match[2]
               if (!allIngredients.some(ing => ing.name.toLowerCase() === name.toLowerCase())) {
-                allIngredients.push({ 
-                  name, 
-                  quantity, 
-                  confident: true, 
-                  bounds: [Math.random() * 80 + 10, Math.random() * 80 + 10, 10, 10] 
-                })
+                allIngredients.push({ name, quantity, confident: true })
               }
             }
           }
@@ -360,18 +341,6 @@ ${settings.unsureIngredients
         )
         
         if (filtered.length > 0) {
-          // Extract bounding box positions with fallbacks
-          const positions = filtered.map(({ name, bounds }) => ({ 
-            name, 
-            bounds: bounds || [Math.random() * 80 + 10, Math.random() * 80 + 10, 10, 10] // Fallback bounds if missing
-          }))
-          
-          // Validate that we have positions for all ingredients
-          console.log(`Found ${filtered.length} ingredients, created ${positions.length} labels`)
-          console.log('Ingredient positions:', positions)
-          
-          setIngredientPositions(positions)
-          
           if (settings.unsureIngredients) {
             // Separate confident and uncertain ingredients
             const confidentItems = filtered.filter(ing => ing.confident)
@@ -394,29 +363,7 @@ ${settings.unsureIngredients
         }
       } catch (parseErr) {
         console.error('Parse error:', parseErr, 'Full text:', fullText)
-        // Fallback: try to extract any ingredients without bounds
-        const fallbackIngredients = []
-        const simplePattern = /"name"\s*:\s*"([^"]+)"/gi
-        let match
-        while ((match = simplePattern.exec(fullText)) !== null) {
-          const name = match[1]
-          if (name && name !== 'food' && name !== 'Unknown' && name.length > 1) {
-            fallbackIngredients.push({ 
-              name, 
-              quantity: '1', 
-              confident: true, 
-              bounds: [Math.random() * 80 + 10, Math.random() * 80 + 10, 10, 10] 
-            })
-          }
-        }
-        
-        if (fallbackIngredients.length > 0) {
-          console.log('Using final fallback with', fallbackIngredients.length, 'ingredients')
-          parsedIngredients = { ingredients: fallbackIngredients }
-        } else {
-          console.log('No ingredients found, using error message')
-          parsedIngredients = { ingredients: [{ name: 'Unable to parse ingredients', quantity: '1', confident: true, bounds: [50, 50, 10, 10] }] }
-        }
+        parsedIngredients = { ingredients: [{ name: 'Unable to parse ingredients', quantity: '1' }] }
       }
 
       setIngredients(parsedIngredients)
@@ -529,19 +476,17 @@ ${settings.unsureIngredients
         <div className="space-y-4">
           <button
             onClick={() => cameraInputRef.current?.click()}
-            className="w-full bg-blue-500 text-white rounded-2xl p-6 flex items-center justify-center gap-3 active:bg-blue-600 transition-colors shadow-lg shadow-blue-500/25"
+            className="w-full bg-blue-500 text-white rounded-2xl p-6 flex items-center justify-center active:bg-blue-600 transition-colors shadow-lg shadow-blue-500/25"
           >
             <Camera size={28} />
-            <span className="text-lg font-semibold">Take Photo</span>
           </button>
           <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={handleFileSelect} className="hidden" />
 
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="w-full bg-white text-gray-700 rounded-2xl p-6 flex items-center justify-center gap-3 active:bg-gray-50 transition-colors border border-gray-200"
+            className="w-full bg-white text-gray-700 rounded-2xl p-6 flex items-center justify-center active:bg-gray-50 transition-colors border border-gray-200"
           >
             <Upload size={28} />
-            <span className="text-lg font-semibold">Upload Photo</span>
           </button>
           <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
 
@@ -618,33 +563,6 @@ ${settings.unsureIngredients
             <button onClick={clearImage} className="absolute top-3 right-3 bg-black/50 text-white rounded-full p-2">
               <X size={20} />
             </button>
-            
-            {/* Ingredient Labels Overlay */}
-            {ingredientPositions.map((ingredient, index) => (
-              <div
-                key={index}
-                className="absolute bg-blue-500 text-white text-xs px-2 py-1 rounded-md shadow-lg border border-white/50 font-semibold"
-                style={{
-                  left: `${ingredient.bounds[0]}%`,
-                  top: `${ingredient.bounds[1]}%`,
-                  transform: 'translate(-50%, -150%)',
-                  zIndex: 10
-                }}
-              >
-                <div className="relative">
-                  {ingredient.name}
-                  {/* Arrow pointing down to the ingredient */}
-                  <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[4px] border-t-blue-500"></div>
-                </div>
-              </div>
-            ))}
-            
-            {/* Debug Info - Remove in production */}
-            {ingredientPositions.length > 0 && (
-              <div className="absolute bottom-3 left-3 bg-black/70 text-white text-xs px-2 py-1 rounded">
-                {ingredientPositions.length} ingredients detected
-              </div>
-            )}
           </div>
 
           <button
