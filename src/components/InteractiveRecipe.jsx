@@ -114,7 +114,7 @@ function InteractiveRecipe({ recipe, onClose }) {
     }
 
     // Check for specific actions
-    const actions = ['stir', 'mix', 'whisk', 'fold', 'beat', 'chop', 'dice', 'mince', 'grate', 'slice', 'cut', 'sear', 'sauté', 'fry', 'bake', 'roast', 'grill', 'steam', 'boil', 'simmer']
+    const actions = ['Stir', 'Mix', 'Whisk', 'Fold', 'Beat', 'Chop', 'Dice', 'Mince', 'Grate', 'Slice', 'Cut', 'Sear', 'Sauté', 'Fry', 'Bake', 'Roast', 'Grill', 'Steam', 'Boil', 'Simmer']
     details.hasAction = actions.some(action => step.toLowerCase().includes(action))
     if (details.hasAction) {
       const foundAction = actions.find(action => step.toLowerCase().includes(action))
@@ -291,42 +291,42 @@ function InteractiveRecipe({ recipe, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      {/* Confetti Celebration */}
-      {showConfetti && (
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-full">
-            {[...Array(50)].map((_, i) => (
-              <div
-                key={i}
-                className="absolute animate-bounce"
-                style={{
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                  animationDelay: `${Math.random() * 2}s`,
-                  animationDuration: `${2 + Math.random() * 3}s`
-                }}
-              >
-                <div className={`w-3 h-3 rounded-full ${
-                  ['bg-yellow-400', 'bg-orange-400', 'bg-red-400', 'bg-pink-400', 'bg-purple-400', 'bg-blue-400', 'bg-green-400'][Math.floor(Math.random() * 7)]
-                }`}></div>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-3xl w-full max-w-md h-[90vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        {/* Confetti Celebration */}
+        {showConfetti && (
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-full">
+              {[...Array(50)].map((_, i) => (
+                <div
+                  key={i}
+                  className="absolute animate-bounce"
+                  style={{
+                    left: `${Math.random() * 100}%`,
+                    top: `${Math.random() * 100}%`,
+                    animationDelay: `${Math.random() * 2}s`,
+                    animationDuration: `${2 + Math.random() * 3}s`
+                  }}
+                >
+                  <div className={`w-3 h-3 rounded-full ${
+                    ['bg-yellow-400', 'bg-orange-400', 'bg-red-400', 'bg-pink-400', 'bg-purple-400', 'bg-blue-400', 'bg-green-400'][Math.floor(Math.random() * 7)]
+                  }`}></div>
+                </div>
+              ))}
+            </div>
+            
+            {/* Celebration Message */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="bg-white rounded-3xl p-8 shadow-2xl text-center animate-bounce">
+                <div className="text-6xl mb-4">🎉</div>
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">You Made It!</h2>
+                <p className="text-xl text-gray-600 mb-4">Delicious {recipe.name} completed!</p>
+                <div className="text-4xl">🍳✨</div>
               </div>
-            ))}
-          </div>
-          
-          {/* Celebration Message */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="bg-white rounded-3xl p-8 shadow-2xl text-center animate-bounce">
-              <div className="text-6xl mb-4">🎉</div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">You Made It!</h2>
-              <p className="text-xl text-gray-600 mb-4">Delicious {recipe.name} completed!</p>
-              <div className="text-4xl">🍳✨</div>
             </div>
           </div>
-        </div>
-      )}
-      
-      <div className="bg-white rounded-3xl w-full max-w-md h-[90vh] overflow-y-auto shadow-2xl">
+        )}
+        
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 p-4 z-10">
           <div className="flex items-center justify-between mb-4">
@@ -567,6 +567,16 @@ function InteractiveRecipe({ recipe, onClose }) {
               className="flex-1 px-4 py-3 rounded-xl bg-orange-500 text-white font-medium hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Next Step ✓
+            </button>
+          </div>
+
+          {/* Close Button */}
+          <div className="mt-4">
+            <button
+              onClick={onClose}
+              className="w-full px-4 py-3 rounded-xl bg-gray-500 text-white font-medium hover:bg-gray-600 transition-colors"
+            >
+              Close Recipe
             </button>
           </div>
         </div>
