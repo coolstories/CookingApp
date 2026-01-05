@@ -207,16 +207,22 @@ CRITICAL RULES:
 
 Suggest exactly 5 delicious recipes using ONLY available ingredients. Each recipe must have a different meal type: one breakfast, one lunch, one dinner, one snack, and one dessert.
 
-IMPORTANT: Make steps VERY detailed with specific timing and instructions:
-- Include exact cooking times (e.g., "Heat pan for 2 minutes over medium heat")
-- Include specific temperatures (e.g., "Cook at 375°F for 15 minutes")
-- Include visual cues (e.g., "Cook until golden brown and crispy")
-- Include specific techniques (e.g., "Stir continuously for 3 minutes to prevent burning")
-- Include pan sizes and heat levels (e.g., "Use medium-high heat in a 10-inch skillet")
-- Include preparation details (e.g., "Dice onions into 1/4-inch pieces")
+IMPORTANT: Make steps EXTREMELY detailed with specific timing and professional cooking instructions:
+- EVERY step MUST include specific timing (e.g., "for 2 minutes", "for 30 seconds", "for 15 minutes")
+- NEVER use vague instructions like "Melt butter" - always specify "Melt butter in microwave for 45 seconds on medium power"
+- Include exact temperatures (e.g., "Preheat oven to 375°F", "Heat pan to medium-high heat (375°F)")
+- Include visual cues (e.g., "until golden brown and crispy", "until bubbles form", "until slightly browned")
+- Include specific techniques (e.g., "Stir continuously for 3 minutes to prevent burning", "Fold gently for 1 minute")
+- Include pan sizes and heat levels (e.g., "Use a 10-inch skillet over medium-high heat", "Preheat 8-inch non-stick pan")
+- Include preparation details (e.g., "Dice onions into 1/4-inch pieces", "Mince garlic finely", "Slice chicken into 1/2-inch strips")
+- Include microwave times (e.g., "Microwave on high for 45 seconds", "Heat in 30-second intervals")
+- Include stovetop timing (e.g., "Sauté for 4-5 minutes until tender", "Simmer for 10 minutes")
+- Include oven timing (e.g., "Bake at 375°F for 20-25 minutes", "Roast for 15 minutes at 400°F")
+
+CRITICAL: Every single step must have specific timing. No step should be without a time component.
 
 Return ONLY a JSON array:
-[{"name": "Recipe Name", "description": "Brief description", "time": "30 mins", "servings": "4", "difficulty": "Easy", "mealType": "Breakfast", "ingredients": ["2 cups item1", "1 cup item2"], "tips": ["Tip 1"], "steps": ["Detailed step with timing and specific instructions", "Another detailed step with exact time and technique"]}]`
+[{"name": "Recipe Name", "description": "Brief description", "time": "30 mins", "servings": "4", "difficulty": "Easy", "mealType": "Breakfast", "ingredients": ["2 cups item1", "1 cup item2"], "tips": ["Tip 1"], "steps": ["Melt butter in microwave for 45 seconds on medium power until completely liquid", "Sauté onions in 10-inch skillet over medium heat for 5 minutes until translucent", "Bake at 375°F for 20 minutes until golden brown and crispy"]}]`
             }]
           })
         }),
