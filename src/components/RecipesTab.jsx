@@ -535,45 +535,53 @@ If canMake is true, "need" should be empty. If false, list what's missing with q
                 <Globe size={20} className="text-blue-500" />
                 Search Any Recipe
               </h3>
+              <button
+                onClick={() => setShowUniversalSearch(!showUniversalSearch)}
+                className="text-blue-500 hover:text-blue-600 text-sm font-medium"
+              >
+                {showUniversalSearch ? 'Hide' : 'Show'}
+              </button>
             </div>
             
-            <div className="space-y-3">
-              <input
-                type="text"
-                value={universalSearchQuery}
-                onChange={(e) => setUniversalSearchQuery(e.target.value)}
-                placeholder="What do you want to cook? (e.g., pasta, chicken curry, chocolate cake)"
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                onKeyPress={(e) => e.key === 'Enter' && searchUniversalRecipes()}
-              />
-              
-              <div className="flex gap-2">
-                <select
-                  value={selectedCuisine}
-                  onChange={(e) => setSelectedCuisine(e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {cuisineOptions.map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.emoji} {option.label}
-                    </option>
-                  ))}
-                </select>
+            {showUniversalSearch && (
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  value={universalSearchQuery}
+                  onChange={(e) => setUniversalSearchQuery(e.target.value)}
+                  placeholder="What do you want to cook? (e.g., pasta, chicken curry, chocolate cake)"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onKeyPress={(e) => e.key === 'Enter' && searchUniversalRecipes()}
+                />
                 
-                <button
-                  onClick={searchUniversalRecipes}
-                  disabled={universalSearchLoading}
-                  className="px-6 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 disabled:opacity-50 flex items-center gap-2"
-                >
-                  {universalSearchLoading ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
-                  Search
-                </button>
+                <div className="flex gap-2">
+                  <select
+                    value={selectedCuisine}
+                    onChange={(e) => setSelectedCuisine(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {cuisineOptions.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.emoji} {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  
+                  <button
+                    onClick={searchUniversalRecipes}
+                    disabled={universalSearchLoading}
+                    className="px-6 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {universalSearchLoading ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
+                    Search
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Universal Search Results */}
-          {universalSearchResults.length > 0 && (
+          {showUniversalSearch && universalSearchResults.length > 0 && (
             <div className="bg-white rounded-2xl p-4">
               <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
                 <BookOpen size={20} className="text-green-500" />
@@ -642,7 +650,7 @@ If canMake is true, "need" should be empty. If false, list what's missing with q
               <ChefHat size={48} className="text-orange-500" />
             </div>
             <h3 className="text-lg font-semibold text-gray-700">No Ingredients Yet</h3>
-            <p className="text-gray-500 text-center mt-2 max-w-xs">Go to Scanner and store ingredients! Or search any recipe above.</p>
+            <p className="text-gray-500 text-center mt-2 max-w-xs">Go to Scanner and store ingredients! {showUniversalSearch ? 'Or search recipes above.' : 'Or search any recipe using the button above.'}</p>
           </div>
         </div>
       ) : (
