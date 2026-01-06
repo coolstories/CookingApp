@@ -353,6 +353,11 @@ ${settings.unsureIngredients
                  ing.name.length > 1
         )
         
+        if (filtered.length === 0) {
+          // No valid ingredients found after filtering
+          throw new Error('No recognizable ingredients found in this photo. Please try taking a clearer photo of food items.')
+        }
+        
         if (filtered.length > 0) {
           if (settings.unsureIngredients) {
             // Separate confident and uncertain ingredients
@@ -385,7 +390,27 @@ ${settings.unsureIngredients
         }
       } catch (parseErr) {
         console.error('Parse error:', parseErr, 'Full text:', fullText)
-        parsedIngredients = { ingredients: [{ name: 'Unable to parse ingredients', quantity: '1' }] }
+        
+        // Check if AI indicated no food was found
+        if (fullText.toLowerCase().includes('no food') || 
+            fullText.toLowerCase().includes('no ingredients') ||
+            fullText.toLowerCase().includes('cannot identify') ||
+            fullText.toLowerCase().includes('unable to detect') ||
+            fullText.toLowerCase().includes('no recognizable food') ||
+            fullText.toLowerCase().includes('no food items') ||
+            fullText.toLowerCase().includes('cannot see any food')) {
+          throw new Error('No food detected in this photo. Please try taking a clearer photo of food items.')
+        }
+        
+        // Check if AI indicated uncertainty but no ingredients were found
+        if (fullText.toLowerCase().includes('uncertain') || 
+            fullText.toLowerCase().includes('not sure') ||
+            fullText.toLowerCase().includes('difficult to identify')) {
+          throw new Error('I\'m not confident about identifying ingredients in this photo. Please try a clearer photo with better lighting.')
+        }
+        
+        // Generic parsing failure
+        throw new Error('Unable to identify ingredients in this photo. Please try again with a clearer image.')
       }
 
       setIngredients(parsedIngredients)
