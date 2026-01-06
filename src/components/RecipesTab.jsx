@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChefHat, Loader2, Clock, Users, Flame, Search, X, Filter, CheckCircle2, Circle } from 'lucide-react'
+import { ChefHat, Loader2, Clock, Users, Flame, Search, X, Filter, CheckCircle2, Circle, Globe, BookOpen, ExternalLink } from 'lucide-react'
 import InteractiveRecipe from './InteractiveRecipe'
 
 const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY
@@ -106,6 +106,13 @@ function RecipesTab({ pantry, preferences, recipes, setRecipes, setPantry }) {
   const [almostRecipeResult, setAlmostRecipeResult] = useState(null)
   const [almostLoading, setAlmostLoading] = useState(false)
   const [searchesRemaining, setSearchesRemaining] = useState(DAILY_RECIPE_LIMIT - getRecipeSearchesToday())
+  
+  // Universal recipe search state
+  const [showUniversalSearch, setShowUniversalSearch] = useState(false)
+  const [universalSearchQuery, setUniversalSearchQuery] = useState('')
+  const [selectedCuisine, setSelectedCuisine] = useState('any')
+  const [universalSearchResults, setUniversalSearchResults] = useState([])
+  const [universalSearchLoading, setUniversalSearchLoading] = useState(false)
 
   const recipeSteps = [
     'Analyzing pantry...',
@@ -114,11 +121,114 @@ function RecipesTab({ pantry, preferences, recipes, setRecipes, setPantry }) {
     'Ranking results...'
   ]
 
+  const cuisineOptions = [
+    { value: 'any', label: 'Any Cuisine', emoji: '🌍' },
+    { value: 'italian', label: 'Italian', emoji: '🇮🇹' },
+    { value: 'mexican', label: 'Mexican', emoji: '🇲🇽' },
+    { value: 'chinese', label: 'Chinese', emoji: '🇨🇳' },
+    { value: 'indian', label: 'Indian', emoji: '🇮🇳' },
+    { value: 'japanese', label: 'Japanese', emoji: '🇯🇵' },
+    { value: 'french', label: 'French', emoji: '🇫🇷' },
+    { value: 'thai', label: 'Thai', emoji: '🇹🇭' },
+    { value: 'mediterranean', label: 'Mediterranean', emoji: '🫒' },
+    { value: 'american', label: 'American', emoji: '🇺🇸' },
+    { value: 'korean', label: 'Korean', emoji: '🇰🇷' },
+    { value: 'greek', label: 'Greek', emoji: '🇬🇷' }
+  ]
+
   const clearPantry = () => {
     if (window.confirm('Are you sure you want to delete all items from your pantry?')) {
       setPantry([])
       setRecipes([])
       setError(null)
+    }
+  }
+
+  const searchUniversalRecipes = async () => {
+    if (!universalSearchQuery.trim()) {
+      setError('Please enter what you want to cook')
+      return
+    }
+
+    setUniversalSearchLoading(true)
+    setError(null)
+
+    try {
+      const cuisineFilter = selectedCuisine !== 'any' ? ` in ${selectedCuisine} style` : ''
+      const prompt = `Find detailed recipes for "${universalSearchQuery}"${cuisineFilter}. 
+
+For each recipe, provide:
+1. Complete ingredient list with quantities
+2. Step-by-step cooking instructions with specific timing
+3. Cooking time, servings, and difficulty level
+4. 2-3 real, clickable online sources/links where users can find the full recipe
+5. Brief description of the dish
+
+IMPORTANT: 
+- Include REAL, working links to popular recipe websites (AllRecipes, Food Network, Bon Appétit, etc.)
+- Make cooking instructions very detailed with exact times and temperatures
+- Include specific techniques and visual cues
+- Return 3-5 different recipe variations if possible
+
+Format as JSON array:
+[{
+  "name": "Recipe Name",
+  "description": "Brief description",
+  "time": "Total time",
+  "servings": "Number of servings",
+  "difficulty": "Easy/Medium/Hard",
+  "ingredients": ["1 cup ingredient1", "2 tbsp ingredient2"],
+  "steps": ["Detailed step 1 with timing", "Detailed step 2 with timing"],
+  "sources": [
+    {"name": "Website Name", "url": "https://example.com/recipe"},
+    {"name": "Another Website", "url": "https://example.com/recipe2"}
+  ]
+}]`
+
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': window.location.origin,
+          'X-Title': 'Recipee Universal Search'
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.0-flash-001',
+          max_tokens: 4000,
+          messages: [{
+            role: 'user',
+            content: prompt
+          }]
+        })
+      })
+
+      if (!response.ok) throw new Error('Failed to search recipes')
+
+      const data = await response.json()
+      const content = data.choices[0]?.message?.content
+
+      let parsedResults = []
+      try {
+        const jsonMatch = content.match(/\[[\s\S]*\]/)
+        if (jsonMatch) {
+          parsedResults = JSON.parse(jsonMatch[0])
+        }
+      } catch (error) {
+        console.error('JSON parsing error:', error)
+      }
+
+      if (!parsedResults || parsedResults.length === 0) {
+        setError('No recipes found. Try different keywords.')
+        setUniversalSearchResults([])
+      } else {
+        setUniversalSearchResults(parsedResults)
+      }
+    } catch (err) {
+      console.error('Universal search error:', err)
+      setError('Failed to search recipes. Please try again.')
+    } finally {
+      setUniversalSearchLoading(false)
     }
   }
 
@@ -387,6 +497,119 @@ If canMake is true, "need" should be empty. If false, list what's missing with q
         </div>
       ) : (
         <div className="space-y-4">
+          {/* Universal Recipe Search */}
+          <div className="bg-white rounded-2xl p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                <Globe size={20} className="text-blue-500" />
+                Search Any Recipe
+              </h3>
+              <button
+                onClick={() => setShowUniversalSearch(!showUniversalSearch)}
+                className="text-blue-500 hover:text-blue-600 text-sm font-medium"
+              >
+                {showUniversalSearch ? 'Hide' : 'Show'}
+              </button>
+            </div>
+            
+            {showUniversalSearch && (
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  value={universalSearchQuery}
+                  onChange={(e) => setUniversalSearchQuery(e.target.value)}
+                  placeholder="What do you want to cook? (e.g., pasta, chicken curry, chocolate cake)"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onKeyPress={(e) => e.key === 'Enter' && searchUniversalRecipes()}
+                />
+                
+                <div className="flex gap-2">
+                  <select
+                    value={selectedCuisine}
+                    onChange={(e) => setSelectedCuisine(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {cuisineOptions.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.emoji} {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  
+                  <button
+                    onClick={searchUniversalRecipes}
+                    disabled={universalSearchLoading}
+                    className="px-6 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {universalSearchLoading ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
+                    Search
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Universal Search Results */}
+          {universalSearchResults.length > 0 && (
+            <div className="bg-white rounded-2xl p-4">
+              <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                <BookOpen size={20} className="text-green-500" />
+                Search Results ({universalSearchResults.length})
+              </h3>
+              <div className="space-y-3">
+                {universalSearchResults.map((recipe, idx) => (
+                  <div key={idx} className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <h4 className="font-semibold text-gray-900">{recipe.name}</h4>
+                        <p className="text-sm text-gray-600">{recipe.description}</p>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <Clock size={14} />
+                        <span>{recipe.time}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
+                      <span className="flex items-center gap-1">
+                        <Users size={14} />
+                        {recipe.servings} servings
+                      </span>
+                      <span className="px-2 py-1 bg-gray-100 rounded-full text-xs">
+                        {recipe.difficulty}
+                      </span>
+                    </div>
+                    
+                    <div className="mb-3">
+                      <h5 className="font-medium text-gray-900 mb-1">Sources:</h5>
+                      <div className="space-y-1">
+                        {recipe.sources?.map((source, sourceIdx) => (
+                          <a
+                            key={sourceIdx}
+                            href={source.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 text-blue-500 hover:text-blue-600 text-sm"
+                          >
+                            <ExternalLink size={12} />
+                            {source.name}
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <button
+                      onClick={() => setInteractiveRecipe(recipe)}
+                      className="w-full bg-green-500 text-white rounded-lg py-2 font-medium hover:bg-green-600 transition-colors"
+                    >
+                      Cook This Recipe
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="bg-white rounded-2xl p-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold text-gray-900">Your Pantry ({pantry.length})</h3>
