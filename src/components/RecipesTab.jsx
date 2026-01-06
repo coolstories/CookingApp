@@ -154,83 +154,115 @@ function RecipesTab({ pantry, preferences, recipes, setRecipes, setPantry }) {
     setError(null)
 
     try {
-      const cuisineFilter = selectedCuisine !== 'any' ? ` in ${selectedCuisine} style` : ''
-      const prompt = `Find detailed recipes for "${universalSearchQuery}"${cuisineFilter}. 
+      const cuisineFilter = selectedCuisine !== 'any' ? ` ${selectedCuisine}` : ''
+      const searchQuery = `${universalSearchQuery}${cuisineFilter} recipe`
+      
+      // First, get recipe from AI
+      const recipePrompt = `Find a detailed recipe for "${searchQuery}". 
 
-For each recipe, provide:
+Provide:
 1. Complete ingredient list with quantities
 2. Step-by-step cooking instructions with specific timing
 3. Cooking time, servings, and difficulty level
-4. 2-3 REAL, working online sources with proper URLs
-5. Brief description of the dish
+4. Brief description of the dish
 
-IMPORTANT FOR SOURCES:
-- Use REAL, working URLs from popular recipe sites
-- Format URLs properly: https://www.allrecipes.com/recipe/...
-- Include sites like: AllRecipes, Food Network, Bon Appétit, Epicurious, Serious Eats
-- NEVER use placeholder URLs like "https://example.com"
-- Make sure URLs look realistic and follow proper patterns
+Make cooking instructions very detailed with exact times and temperatures. Include specific techniques and visual cues.
 
-Example source format:
-{"name": "AllRecipes", "url": "https://www.allrecipes.com/recipe/12345/chicken-pasta"}
-{"name": "Food Network", "url": "https://www.foodnetwork.com/recipes/food-network-kitchens/chicken-dish-recipe"}
-
-Make cooking instructions very detailed with exact times and temperatures. Include specific techniques and visual cues. Return 3-5 different recipe variations.
-
-Format as JSON array:
-[{
+Return as JSON:
+{
   "name": "Recipe Name",
   "description": "Brief description",
   "time": "Total time",
   "servings": "Number of servings",
   "difficulty": "Easy/Medium/Hard",
   "ingredients": ["1 cup ingredient1", "2 tbsp ingredient2"],
-  "steps": ["Detailed step 1 with timing", "Detailed step 2 with timing"],
-  "sources": [
-    {"name": "AllRecipes", "url": "https://www.allrecipes.com/recipe/12345/example-recipe"},
-    {"name": "Food Network", "url": "https://www.foodnetwork.com/recipes/example-recipe-1234"}
-  ]
-}]`
+  "steps": ["Detailed step 1 with timing", "Detailed step 2 with timing"]
+}`
 
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': window.location.origin,
-          'X-Title': 'Recipee Universal Search'
-        },
-        body: JSON.stringify({
-          model: 'google/gemini-2.0-flash-001',
-          max_tokens: 4000,
-          messages: [{
-            role: 'user',
-            content: prompt
-          }]
+      const [recipeResponse] = await Promise.all([
+        fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': window.location.origin,
+            'X-Title': 'Recipee Universal Search'
+          },
+          body: JSON.stringify({
+            model: 'google/gemini-2.0-flash-001',
+            max_tokens: 2000,
+            messages: [{
+              role: 'user',
+              content: recipePrompt
+            }]
+          })
         })
-      })
+      ])
 
-      if (!response.ok) throw new Error('Failed to search recipes')
+      if (!recipeResponse.ok) throw new Error('Failed to generate recipe')
 
-      const data = await response.json()
-      const content = data.choices[0]?.message?.content
+      const recipeData = await recipeResponse.json()
+      const recipeContent = recipeData.choices[0]?.message?.content
 
-      let parsedResults = []
+      let parsedRecipe = null
       try {
-        const jsonMatch = content.match(/\[[\s\S]*\]/)
+        const jsonMatch = recipeContent.match(/\{[\s\S]*\}/)
         if (jsonMatch) {
-          parsedResults = JSON.parse(jsonMatch[0])
+          parsedRecipe = JSON.parse(jsonMatch[0])
         }
       } catch (error) {
-        console.error('JSON parsing error:', error)
+        console.error('Recipe JSON parsing error:', error)
       }
 
-      if (!parsedResults || parsedResults.length === 0) {
-        setError('No recipes found. Try different keywords.')
+      if (!parsedRecipe) {
+        setError('Failed to generate recipe. Please try again.')
         setUniversalSearchResults([])
-      } else {
-        setUniversalSearchResults(parsedResults)
+        return
       }
+
+      // Now search for real sources using Google Custom Search
+      const searchUrl = `https://www.googleapis.com/customsearch/v1?key=AIzaSyCbIxVNV6tYMrour7beqsEnE48SlRg3b7w&cx=017576662512468239146:omuauf_lfve&q=${encodeURIComponent(searchQuery)}&num=5`
+      
+      const searchResponse = await fetch(searchUrl)
+      const searchData = await searchResponse.json()
+      
+      const sources = []
+      if (searchData.items) {
+        searchData.items.forEach(item => {
+          sources.push({
+            name: item.displayLink.replace('www.', ''),
+            url: item.link,
+            title: item.title
+          })
+        })
+      }
+
+      // If no sources found, try alternative search terms
+      if (sources.length === 0) {
+        const altSearchUrl = `https://www.googleapis.com/customsearch/v1?key=AIzaSyCbIxVNV6tYMrour7beqsEnE48SlRg3b7w&cx=017576662512468239146:omuauf_lfve&q=${encodeURIComponent(universalSearchQuery + ' recipe allrecipes')}&num=3`
+        const altResponse = await fetch(altSearchUrl)
+        const altData = await altResponse.json()
+        
+        if (altData.items) {
+          altData.items.forEach(item => {
+            sources.push({
+              name: item.displayLink.replace('www.', ''),
+              url: item.link,
+              title: item.title
+            })
+          })
+        }
+      }
+
+      // Add the recipe with sources to results
+      const recipeWithSources = {
+        ...parsedRecipe,
+        sources: sources.length > 0 ? sources : [
+          { name: 'Search on Google', url: `https://www.google.com/search?q=${encodeURIComponent(searchQuery + ' recipe')}`, title: 'Find more recipes online' }
+        ]
+      }
+
+      setUniversalSearchResults([recipeWithSources])
     } catch (err) {
       console.error('Universal search error:', err)
       setError('Failed to search recipes. Please try again.')
@@ -580,10 +612,13 @@ If canMake is true, "need" should be empty. If false, list what's missing with q
                             href={source.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-1 text-blue-500 hover:text-blue-600 text-sm"
+                            className="flex items-start gap-1 text-blue-500 hover:text-blue-600 text-sm"
                           >
-                            <ExternalLink size={12} />
-                            {source.name}
+                            <ExternalLink size={12} className="mt-0.5 flex-shrink-0" />
+                            <div>
+                              <div className="font-medium">{source.name}</div>
+                              {source.title && <div className="text-xs text-gray-600">{source.title}</div>}
+                            </div>
                           </a>
                         ))}
                       </div>
@@ -704,10 +739,13 @@ If canMake is true, "need" should be empty. If false, list what's missing with q
                             href={source.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-1 text-blue-500 hover:text-blue-600 text-sm"
+                            className="flex items-start gap-1 text-blue-500 hover:text-blue-600 text-sm"
                           >
-                            <ExternalLink size={12} />
-                            {source.name}
+                            <ExternalLink size={12} className="mt-0.5 flex-shrink-0" />
+                            <div>
+                              <div className="font-medium">{source.name}</div>
+                              {source.title && <div className="text-xs text-gray-600">{source.title}</div>}
+                            </div>
                           </a>
                         ))}
                       </div>
