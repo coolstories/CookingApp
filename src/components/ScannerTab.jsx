@@ -622,7 +622,12 @@ ${settings.unsureIngredients
     return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
 
-  const isIngredientStored = (name) => pantry.some(p => p.name.toLowerCase() === simplifyIngredientName(name).toLowerCase())
+  const isIngredientStored = (name) => {
+  const simplifiedName = simplifyIngredientName(name)
+  const isStored = pantry.some(p => p.name.toLowerCase() === simplifiedName.toLowerCase())
+  console.log('isIngredientStored check:', { name, simplifiedName, isStored, pantry: pantry.map(p => p.name) })
+  return isStored
+}
 
   const handleManualInputChange = (value) => {
     setManualInput(value)
