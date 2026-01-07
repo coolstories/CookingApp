@@ -1,9 +1,33 @@
 import { useState, useRef, useEffect } from 'react'
-import { Camera, Upload, Loader2, Sparkles, X, Check, Plus } from 'lucide-react'
+import { Camera, Upload, Loader2, Sparkles, X, Check, Plus, MessageCircle, Send, Bot, User } from 'lucide-react'
 
 const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD
 const DAILY_SCAN_LIMIT = 5
+const DAILY_CHAT_LIMIT = 5
+
+function getChatMessagesToday() {
+  const stored = localStorage.getItem('chatUsage')
+  if (!stored) return 0
+  const { date, count } = JSON.parse(stored)
+  const today = new Date().toDateString()
+  return date === today ? count : 0
+}
+
+function incrementChatMessagesToday() {
+  const stored = localStorage.getItem('chatUsage')
+  const today = new Date().toDateString()
+  
+  if (!stored) {
+    localStorage.setItem('chatUsage', JSON.stringify({ date: today, count: 1 }))
+    return 1
+  }
+  
+  const { date, count } = JSON.parse(stored)
+  const newCount = date === today ? count + 1 : 1
+  localStorage.setItem('chatUsage', JSON.stringify({ date: today, count: newCount }))
+  return newCount
+}
 
 function getScansToday() {
   try {
@@ -40,9 +64,16 @@ const COMMON_INGREDIENTS = [
   'Baking Powder', 'Baking Soda', 'Yeast', 'Nuts', 'Almonds', 'Walnuts', 'Coconut', 'Avocado', 'Corn', 'Peas', 'Green Beans'
 ]
 
-function ScannerTab({ addToHistory, pantry, setPantry, ingredients, setIngredients, imagePreview, setImagePreview }) {
+function ScannerTab({ addToHistory, pantry, setPantry, ingredients, setIngredients, imagePreview, setImagePreview, isAdmin = false }) {
+  console.log('ScannerTab isAdmin:', isAdmin)
   const [image, setImage] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [showChat, setShowChat] = useState(false)
+  const [chatMessages, setChatMessages] = useState([])
+  const [chatInput, setChatInput] = useState('')
+  const [chatLoading, setChatLoading] = useState(false)
+  const [messagesRemaining, setMessagesRemaining] = useState(isAdmin ? 999 : DAILY_CHAT_LIMIT - getChatMessagesToday())
+  const chatInputRef = useRef(null)
   const [error, setError] = useState(null)
   const [showScanning, setShowScanning] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
@@ -447,11 +478,142 @@ ${settings.unsureIngredients
   }
 
   const storeAllIngredients = () => {
-    if (!ingredients) return
-    const newItems = ingredients.ingredients
-      .filter(ing => !pantry.some(p => p.name.toLowerCase() === simplifyIngredientName(ing.name).toLowerCase()))
-      .map(ing => ({ ...ing, name: simplifyIngredientName(ing.name) }))
-    setPantry([...pantry, ...newItems])
+    const uniqueIngredients = ingredients?.ingredients?.filter(ing => 
+      !pantry.some(p => p.name.toLowerCase() === ing.name.toLowerCase())
+    ) || []
+    
+    setPantry([...pantry, ...uniqueIngredients])
+  }
+
+  const addChatMessage = (message) => {
+    console.log('Adding chat message:', message)
+    setChatMessages(prev => {
+      const newMessages = [...prev, message]
+      console.log('Chat messages now:', newMessages)
+      return newMessages
+    })
+    setTimeout(() => {
+      chatInputRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }, 100)
+  }
+
+  const sendChatMessage = async () => {
+    console.log('sendChatMessage called, isAdmin:', isAdmin, 'messagesRemaining:', messagesRemaining)
+    
+    if (!chatInput.trim() && !imagePreview) return
+    if (!isAdmin && messagesRemaining <= 0) {
+      console.log('Blocking message - limit reached for non-admin')
+      addChatMessage({
+        type: 'bot',
+        content: 'You\'ve reached your daily chat limit of 5 messages. Upgrade to premium for unlimited conversations!',
+        timestamp: new Date().toISOString()
+      })
+      return
+    }
+
+    const userMessage = chatInput.trim() || 'Tell me about this image'
+    setChatLoading(true)
+
+    // Add user message
+    addChatMessage({
+      type: 'user',
+      content: userMessage,
+      image: imagePreview || null,
+      timestamp: new Date().toISOString()
+    })
+
+    setChatInput('')
+
+    try {
+      let prompt = `You are a helpful cooking and food assistant. The user is chatting with you about food, ingredients, or cooking.`
+      
+      if (imagePreview) {
+        prompt += ` The user has shared an image from a recent scan. Please analyze it and provide helpful cooking-related advice.`
+      }
+
+      prompt += `\n\nUser message: "${userMessage}"`
+
+      console.log('Sending chat message:', { userMessage, hasImage: !!imagePreview })
+
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': window.location.origin,
+          'X-Title': 'Recipee Chat Assistant'
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.0-flash-001',
+          max_tokens: 1000,
+          messages: [{
+            role: 'user',
+            content: imagePreview ? [
+              {
+                type: 'text',
+                text: prompt
+              },
+              {
+                type: 'image_url',
+                image_url: {
+                  url: imagePreview
+                }
+              }
+            ] : [{
+              role: 'user',
+              content: prompt
+            }]
+          }]
+        })
+      })
+
+      console.log('Chat response status:', response.status)
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Chat API error:', errorText)
+        throw new Error(`API Error: ${response.status} - ${errorText}`)
+      }
+
+      const data = await response.json()
+      console.log('Chat API response data:', data)
+
+      const botMessage = data.choices?.[0]?.message?.content || 'Sorry, I couldn\'t process that request.'
+
+      if (!botMessage || botMessage.trim() === '') {
+        throw new Error('Empty response from AI')
+      }
+
+      addChatMessage({
+        type: 'bot',
+        content: botMessage,
+        timestamp: new Date().toISOString()
+      })
+
+      if (!isAdmin) {
+        console.log('Decrementing message count for non-admin')
+        const newCount = incrementChatMessagesToday()
+        setMessagesRemaining(DAILY_CHAT_LIMIT - newCount)
+      } else {
+        console.log('Admin user - not decrementing message count')
+      }
+
+    } catch (error) {
+      console.error('Chat error:', error)
+      
+      // Add a test message to verify UI is working
+      addChatMessage({
+        type: 'bot',
+        content: `Test response: I received your message "${userMessage}". There was an error: ${error.message}. The chat UI is working!`,
+        timestamp: new Date().toISOString()
+      })
+    } finally {
+      setChatLoading(false)
+    }
+  }
+
+  const formatTime = (timestamp) => {
+    return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
 
   const isIngredientStored = (name) => pantry.some(p => p.name.toLowerCase() === simplifyIngredientName(name).toLowerCase())
@@ -808,6 +970,127 @@ ${settings.unsureIngredients
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Chat Section - Show after scan */}
+          {imagePreview && !showChat && (
+            <div className="bg-white rounded-2xl p-5">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-gray-900 text-lg flex items-center gap-2">
+                  <MessageCircle size={20} className="text-blue-500" />
+                  Ask About This Photo
+                </h3>
+                <span className="text-xs text-gray-500">
+                  {isAdmin ? 'Unlimited' : `${messagesRemaining}/5 messages today`}
+                </span>
+              </div>
+              <p className="text-gray-600 text-sm mb-4">
+                Chat with AI about ingredients, recipes, or cooking advice for this photo
+              </p>
+              <button
+                onClick={() => setShowChat(true)}
+                className="w-full bg-blue-500 text-white rounded-xl p-3 font-medium hover:bg-blue-600 transition-colors flex items-center justify-center gap-2"
+              >
+                <MessageCircle size={20} />
+                Start Chat
+              </button>
+            </div>
+          )}
+
+          {/* Chat Interface */}
+          {showChat && (
+            <div className="bg-white rounded-2xl p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-900 text-lg flex items-center gap-2">
+                  <MessageCircle size={20} className="text-blue-500" />
+                  AI Cooking Chat
+                </h3>
+                <button
+                  onClick={() => setShowChat(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Messages */}
+              <div className="space-y-3 mb-4 max-h-64 overflow-y-auto">
+                {chatMessages.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="bg-blue-100 rounded-full p-3 mb-3 inline-block">
+                      <MessageCircle size={24} className="text-blue-600" />
+                    </div>
+                    <p className="text-gray-600 text-sm">Ask about ingredients, recipes, or cooking!</p>
+                  </div>
+                ) : (
+                  chatMessages.map((message, idx) => (
+                    <div
+                      key={idx}
+                      className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div className={`flex gap-2 max-w-[80%] ${message.type === 'user' ? 'flex-row-reverse' : ''}`}>
+                        <div className={`rounded-full p-1 flex-shrink-0 ${
+                          message.type === 'user' ? 'bg-blue-500' : 'bg-gray-200'
+                        }`}>
+                          {message.type === 'user' ? (
+                            <User size={12} className="text-white" />
+                          ) : (
+                            <Bot size={12} className="text-gray-600" />
+                          )}
+                        </div>
+                        <div>
+                          <div className={`rounded-xl p-2 ${
+                            message.type === 'user' 
+                              ? 'bg-blue-500 text-white' 
+                              : 'bg-gray-100 border border-gray-200 text-gray-900'
+                          }`}>
+                            {message.image && (
+                              <img
+                                src={message.image}
+                                alt="Shared image"
+                                className="rounded-lg mb-2 max-w-full h-auto"
+                                style={{ maxHeight: '120px' }}
+                              />
+                            )}
+                            <p className="text-xs whitespace-pre-wrap">{message.content}</p>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1 px-1">
+                            {formatTime(message.timestamp)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+                <div ref={chatInputRef} />
+              </div>
+
+              {/* Input */}
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  placeholder="Ask about ingredients, recipes, or cooking..."
+                  className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onKeyPress={(e) => e.key === 'Enter' && !chatLoading && sendChatMessage()}
+                />
+
+                <button
+                  onClick={sendChatMessage}
+                  disabled={chatLoading || (!chatInput.trim() && !imagePreview)}
+                  className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {chatLoading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                </button>
+              </div>
+
+              {!isAdmin && messagesRemaining <= 1 && (
+                <p className="text-xs text-orange-600 mt-2 text-center">
+                  {messagesRemaining === 0 ? 'Daily limit reached' : `${messagesRemaining} message remaining today`}
+                </p>
+              )}
             </div>
           )}
         </div>

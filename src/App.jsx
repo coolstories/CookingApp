@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Home, History, User, ChefHat, MessageCircle } from 'lucide-react'
+import { Home, History, User, ChefHat } from 'lucide-react'
 import ScannerTab from './components/ScannerTab'
 import HistoryTab from './components/HistoryTab'
 import ProfileTab from './components/ProfileTab'
 import RecipesTab from './components/RecipesTab'
-import ChatTab from './components/ChatTab'
 import Onboarding from './components/Onboarding'
 
 function App() {
@@ -14,8 +13,6 @@ function App() {
   const [recipes, setRecipes] = useState([])
   const [ingredients, setIngredients] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
-  const [lastScannedImage, setLastScannedImage] = useState(null)
-  const [isAdmin, setIsAdmin] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [userName, setUserName] = useState('')
   const [selectedMenu, setSelectedMenu] = useState(null)
@@ -29,6 +26,7 @@ function App() {
     { id: 'lowcarb', name: 'Low Carb', emoji: '🥩', description: 'Reduce carbohydrates', enabled: false },
     { id: 'healthy', name: 'Healthy Eating', emoji: '💪', description: 'Nutritious meals', enabled: false },
   ])
+  const [isAdmin, setIsAdmin] = useState(false) // Admin state for unlimited chat
 
   // Check if onboarding should be shown
   useEffect(() => {
@@ -74,14 +72,8 @@ function App() {
       const storedIngredients = localStorage.getItem('ingredients')
       if (storedIngredients) setIngredients(JSON.parse(storedIngredients))
 
-      const storedLastScannedImage = localStorage.getItem('lastScannedImage')
-      if (storedLastScannedImage) setLastScannedImage(storedLastScannedImage)
-
       const storedIsAdmin = localStorage.getItem('isAdmin')
       if (storedIsAdmin) setIsAdmin(JSON.parse(storedIsAdmin))
-
-      const storedUserName = localStorage.getItem('userName')
-      if (storedUserName) setUserName(storedUserName)
     } catch (error) {
       console.warn('Error loading data from localStorage:', error)
     }
@@ -131,6 +123,14 @@ function App() {
 
   useEffect(() => {
     try {
+      localStorage.setItem('isAdmin', JSON.stringify(isAdmin))
+    } catch (error) {
+      console.warn('Error saving isAdmin to localStorage:', error)
+    }
+  }, [isAdmin])
+
+  useEffect(() => {
+    try {
       localStorage.setItem('imagePreview', imagePreview || '')
     } catch (error) {
       console.warn('Error saving imagePreview to localStorage:', error)
@@ -145,27 +145,8 @@ function App() {
     }
   }, [ingredients])
 
-  useEffect(() => {
-    try {
-      localStorage.setItem('lastScannedImage', lastScannedImage || '')
-    } catch (error) {
-      console.warn('Error saving lastScannedImage to localStorage:', error)
-    }
-  }, [lastScannedImage])
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('isAdmin', JSON.stringify(isAdmin))
-    } catch (error) {
-      console.warn('Error saving isAdmin to localStorage:', error)
-    }
-  }, [isAdmin])
-
   const addToHistory = (scan) => {
     setScanHistory(prev => [scan, ...prev])
-    if (scan.image) {
-      setLastScannedImage(scan.image)
-    }
   }
 
   const handleOnboardingComplete = (name) => {
@@ -197,7 +178,6 @@ function App() {
   const tabs = [
     { id: 'scanner', label: 'Scanner', icon: Home },
     { id: 'recipes', label: 'Recipes', icon: ChefHat },
-    { id: 'chat', label: 'AI Chat', icon: MessageCircle },
     { id: 'history', label: 'History', icon: History },
     { id: 'profile', label: 'Profile', icon: User },
   ]
@@ -214,6 +194,7 @@ function App() {
             setIngredients={setIngredients}
             imagePreview={imagePreview}
             setImagePreview={setImagePreview}
+            isAdmin={isAdmin}
           />
         )
       case 'recipes':
@@ -226,12 +207,10 @@ function App() {
             setPantry={setPantry}
           />
         )
-      case 'chat':
-        return <ChatTab lastScannedImage={lastScannedImage} isAdmin={isAdmin} />
       case 'history':
         return <HistoryTab history={scanHistory} />
       case 'profile':
-        return <ProfileTab preferences={preferences} setPreferences={setPreferences} onRedoOnboarding={handleRedoOnboarding} />
+        return <ProfileTab preferences={preferences} setPreferences={setPreferences} onRedoOnboarding={handleRedoOnboarding} isAdmin={isAdmin} setIsAdmin={setIsAdmin} />
       default:
         return <ScannerTab addToHistory={addToHistory} pantry={pantry} setPantry={setPantry} />
     }

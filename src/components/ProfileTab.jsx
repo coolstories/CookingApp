@@ -9,7 +9,7 @@ function getScansToday() {
   return date === today ? count : 0
 }
 
-function ProfileTab({ preferences, setPreferences, onRedoOnboarding }) {
+function ProfileTab({ preferences, setPreferences, onRedoOnboarding, isAdmin, setIsAdmin }) {
   const [selectedMenu, setSelectedMenu] = useState(null)
   const [userName, setUserName] = useState('Guest User')
   const [avatarImage, setAvatarImage] = useState(null)
@@ -344,6 +344,22 @@ function ProfileTab({ preferences, setPreferences, onRedoOnboarding }) {
                     />
                     <span className="text-sm text-gray-700">
                       {settings.unsureIngredients ? 'Enabled' : 'Disabled'}
+                    </span>
+                  </label>
+                </div>
+
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <p className="text-sm font-medium text-gray-900">Admin Mode</p>
+                  <p className="text-xs text-gray-500 mt-1 mb-2">Unlimited chat messages and premium features</p>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={isAdmin}
+                      onChange={(e) => setIsAdmin(e.target.checked)}
+                      className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700">
+                      {isAdmin ? 'Admin (Unlimited)' : 'Free (5/day)'}
                     </span>
                   </label>
                 </div>
