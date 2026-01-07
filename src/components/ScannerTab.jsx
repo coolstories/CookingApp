@@ -816,8 +816,12 @@ ${settings.unsureIngredients
                 {pantry.map((item, idx) => (
                   <div key={idx} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
                     <span className="text-sm text-gray-700">{item.name}</span>
-                    <button onClick={() => setPantry(pantry.filter((_, i) => i !== idx))} className="text-gray-400 hover:text-red-500">
+                    <button
+                      onClick={() => setPantry(pantry.filter((_, i) => i !== idx))}
+                      className="flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200 transition-colors"
+                    >
                       <X size={16} />
+                      Remove
                     </button>
                   </div>
                 ))}
@@ -967,8 +971,8 @@ ${settings.unsureIngredients
                     </div>
                     <button
                       onClick={() => addToPantry(item)}
-                      className={`flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-medium ${
-                        isIngredientStored(item.name) ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                      className={`flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                        isIngredientStored(item.name) ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
                       }`}
                     >
                       {isIngredientStored(item.name) ? <><Check size={16} /> Stored</> : <><Plus size={16} /> Store</>}
