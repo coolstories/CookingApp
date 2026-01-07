@@ -14,6 +14,8 @@ function App() {
   const [recipes, setRecipes] = useState([])
   const [ingredients, setIngredients] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
+  const [lastScannedImage, setLastScannedImage] = useState(null)
+  const [isAdmin, setIsAdmin] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [userName, setUserName] = useState('')
   const [selectedMenu, setSelectedMenu] = useState(null)
@@ -67,10 +69,19 @@ function App() {
       if (storedActiveTab) setActiveTab(storedActiveTab)
 
       const storedImagePreview = localStorage.getItem('imagePreview')
-      if (storedImagePreview && storedImagePreview !== '') setImagePreview(storedImagePreview)
+      if (storedImagePreview) setImagePreview(storedImagePreview)
 
       const storedIngredients = localStorage.getItem('ingredients')
       if (storedIngredients) setIngredients(JSON.parse(storedIngredients))
+
+      const storedLastScannedImage = localStorage.getItem('lastScannedImage')
+      if (storedLastScannedImage) setLastScannedImage(storedLastScannedImage)
+
+      const storedIsAdmin = localStorage.getItem('isAdmin')
+      if (storedIsAdmin) setIsAdmin(JSON.parse(storedIsAdmin))
+
+      const storedUserName = localStorage.getItem('userName')
+      if (storedUserName) setUserName(storedUserName)
     } catch (error) {
       console.warn('Error loading data from localStorage:', error)
     }
@@ -134,8 +145,27 @@ function App() {
     }
   }, [ingredients])
 
+  useEffect(() => {
+    try {
+      localStorage.setItem('lastScannedImage', lastScannedImage || '')
+    } catch (error) {
+      console.warn('Error saving lastScannedImage to localStorage:', error)
+    }
+  }, [lastScannedImage])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('isAdmin', JSON.stringify(isAdmin))
+    } catch (error) {
+      console.warn('Error saving isAdmin to localStorage:', error)
+    }
+  }, [isAdmin])
+
   const addToHistory = (scan) => {
     setScanHistory(prev => [scan, ...prev])
+    if (scan.image) {
+      setLastScannedImage(scan.image)
+    }
   }
 
   const handleOnboardingComplete = (name) => {
@@ -167,8 +197,8 @@ function App() {
   const tabs = [
     { id: 'scanner', label: 'Scanner', icon: Home },
     { id: 'recipes', label: 'Recipes', icon: ChefHat },
+    { id: 'chat', label: 'AI Chat', icon: MessageCircle },
     { id: 'history', label: 'History', icon: History },
-    { id: 'chat', label: 'Chat', icon: MessageCircle },
     { id: 'profile', label: 'Profile', icon: User },
   ]
 
@@ -196,16 +226,10 @@ function App() {
             setPantry={setPantry}
           />
         )
+      case 'chat':
+        return <ChatTab lastScannedImage={lastScannedImage} isAdmin={isAdmin} />
       case 'history':
         return <HistoryTab history={scanHistory} />
-      case 'chat':
-        return (
-          <ChatTab 
-            imagePreview={imagePreview}
-            ingredients={ingredients}
-            userName={userName}
-          />
-        )
       case 'profile':
         return <ProfileTab preferences={preferences} setPreferences={setPreferences} onRedoOnboarding={handleRedoOnboarding} />
       default:
