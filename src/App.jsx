@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Home, History, User, ChefHat } from 'lucide-react'
+import { Home, History, User, ChefHat, MessageCircle } from 'lucide-react'
 import ScannerTab from './components/ScannerTab'
 import HistoryTab from './components/HistoryTab'
 import ProfileTab from './components/ProfileTab'
 import RecipesTab from './components/RecipesTab'
+import ChatTab from './components/ChatTab'
 import Onboarding from './components/Onboarding'
 
 function App() {
@@ -167,6 +168,7 @@ function App() {
     { id: 'scanner', label: 'Scanner', icon: Home },
     { id: 'recipes', label: 'Recipes', icon: ChefHat },
     { id: 'history', label: 'History', icon: History },
+    { id: 'chat', label: 'Chat', icon: MessageCircle },
     { id: 'profile', label: 'Profile', icon: User },
   ]
 
@@ -196,6 +198,14 @@ function App() {
         )
       case 'history':
         return <HistoryTab history={scanHistory} />
+      case 'chat':
+        return (
+          <ChatTab 
+            imagePreview={imagePreview}
+            ingredients={ingredients}
+            userName={userName}
+          />
+        )
       case 'profile':
         return <ProfileTab preferences={preferences} setPreferences={setPreferences} onRedoOnboarding={handleRedoOnboarding} />
       default:
