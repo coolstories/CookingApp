@@ -479,10 +479,16 @@ ${settings.unsureIngredients
 
   const storeAllIngredients = () => {
     const uniqueIngredients = ingredients?.ingredients?.filter(ing => 
-      !pantry.some(p => p.name.toLowerCase() === ing.name.toLowerCase())
+      !pantry.some(p => p.name.toLowerCase() === simplifyIngredientName(ing.name).toLowerCase())
     ) || []
     
-    setPantry([...pantry, ...uniqueIngredients])
+    // Convert to simplified names for consistency
+    const simplifiedIngredients = uniqueIngredients.map(ing => ({
+      ...ing,
+      name: simplifyIngredientName(ing.name)
+    }))
+    
+    setPantry([...pantry, ...simplifiedIngredients])
   }
 
   const addChatMessage = (message) => {

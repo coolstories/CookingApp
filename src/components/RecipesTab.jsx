@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ChefHat, Loader2, Clock, Users, Flame, Search, X, Filter, CheckCircle2, Circle, Globe, BookOpen, ExternalLink } from 'lucide-react'
 import InteractiveRecipe from './InteractiveRecipe'
 
@@ -151,30 +151,37 @@ function RecipesTab({ pantry, preferences, recipes, setRecipes, setPantry }) {
 
   // Detect pantry changes
   useEffect(() => {
-    const currentHash = createPantryHash(pantry)
-    
-    if (lastPantryHash && lastPantryHash !== currentHash) {
-      // Pantry has changed
-      const lastIngredients = lastPantryHash.split('|')
-      const currentIngredients = pantry.map(item => item.name.toLowerCase())
+    try {
+      const currentHash = createPantryHash(pantry)
+      console.log('Pantry change detection:', { currentHash, lastPantryHash, pantryLength: pantry.length })
       
-      const added = currentIngredients.filter(ing => !lastIngredients.includes(ing))
-      const removed = lastIngredients.filter(ing => !currentIngredients.includes(ing))
-      
-      if (added.length > 0 && removed.length === 0) {
-        setChangeType('added')
-        setPantryChanged(true)
-      } else if (removed.length > 0 && added.length === 0) {
-        setChangeType('removed')
-        setPantryChanged(true)
-      } else if (added.length > 0 || removed.length > 0) {
-        setChangeType('changed')
-        setPantryChanged(true)
+      if (lastPantryHash && lastPantryHash !== currentHash) {
+        // Pantry has changed
+        const lastIngredients = lastPantryHash === '' ? [] : lastPantryHash.split('|')
+        const currentIngredients = pantry.map(item => item.name.toLowerCase())
+        
+        const added = currentIngredients.filter(ing => !lastIngredients.includes(ing))
+        const removed = lastIngredients.filter(ing => !currentIngredients.includes(ing))
+        
+        console.log('Pantry changes detected:', { added, removed, changeType })
+        
+        if (added.length > 0 && removed.length === 0) {
+          setChangeType('added')
+          setPantryChanged(true)
+        } else if (removed.length > 0 && added.length === 0) {
+          setChangeType('removed')
+          setPantryChanged(true)
+        } else if (added.length > 0 || removed.length > 0) {
+          setChangeType('changed')
+          setPantryChanged(true)
+        }
       }
+      
+      setLastPantryHash(currentHash)
+    } catch (error) {
+      console.error('Error in pantry change detection:', error)
     }
-    
-    setLastPantryHash(currentHash)
-  }, [pantry, lastPantryHash])
+  }, [pantry]) // Only depend on pantry, not lastPantryHash
 
   const clearPantry = () => {
     if (window.confirm('Are you sure you want to delete all items from your pantry?')) {
