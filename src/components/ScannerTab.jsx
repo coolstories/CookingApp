@@ -980,7 +980,7 @@ ${settings.unsureIngredients
                         isIngredientStored(item.name) ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
                       }`}
                     >
-                      {isIngredientStored(item.name) ? <><Check size={16} /> Stored</> : <><Plus size={16} /> Store</>}
+                      {isIngredientStored(item.name) ? <><Plus size={16} /> Stored</> : <><Plus size={16} /> Store</>}
                     </button>
                   </div>
                 ))}
