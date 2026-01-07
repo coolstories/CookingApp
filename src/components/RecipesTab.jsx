@@ -114,6 +114,11 @@ function RecipesTab({ pantry, preferences, recipes, setRecipes, setPantry }) {
   const [universalSearchResults, setUniversalSearchResults] = useState([])
   const [universalSearchLoading, setUniversalSearchLoading] = useState(false)
 
+  // Pantry change detection state
+  const [lastPantryHash, setLastPantryHash] = useState('')
+  const [pantryChanged, setPantryChanged] = useState(false)
+  const [changeType, setChangeType] = useState('') // 'added' or 'removed'
+
   const recipeSteps = [
     'Analyzing pantry...',
     'Matching ingredients...',
@@ -136,11 +141,57 @@ function RecipesTab({ pantry, preferences, recipes, setRecipes, setPantry }) {
     { value: 'greek', label: 'Greek', emoji: '🇬🇷' }
   ]
 
+  // Create a hash of pantry ingredients for change detection
+  const createPantryHash = (pantryItems) => {
+    return pantryItems
+      .map(item => item.name.toLowerCase())
+      .sort()
+      .join('|')
+  }
+
+  // Detect pantry changes
+  useEffect(() => {
+    const currentHash = createPantryHash(pantry)
+    
+    if (lastPantryHash && lastPantryHash !== currentHash) {
+      // Pantry has changed
+      const lastIngredients = lastPantryHash.split('|')
+      const currentIngredients = pantry.map(item => item.name.toLowerCase())
+      
+      const added = currentIngredients.filter(ing => !lastIngredients.includes(ing))
+      const removed = lastIngredients.filter(ing => !currentIngredients.includes(ing))
+      
+      if (added.length > 0 && removed.length === 0) {
+        setChangeType('added')
+        setPantryChanged(true)
+      } else if (removed.length > 0 && added.length === 0) {
+        setChangeType('removed')
+        setPantryChanged(true)
+      } else if (added.length > 0 || removed.length > 0) {
+        setChangeType('changed')
+        setPantryChanged(true)
+      }
+    }
+    
+    setLastPantryHash(currentHash)
+  }, [pantry, lastPantryHash])
+
   const clearPantry = () => {
     if (window.confirm('Are you sure you want to delete all items from your pantry?')) {
       setPantry([])
       setRecipes([])
       setError(null)
+      setPantryChanged(false)
+      setChangeType('')
+    }
+  }
+
+  const refreshRecipes = () => {
+    setPantryChanged(false)
+    setChangeType('')
+    // Trigger findRecipes if there are ingredients
+    if (pantry.length > 0) {
+      findRecipes()
     }
   }
 
@@ -432,6 +483,10 @@ Return ONLY a JSON array:
       setShowChecklist(false)
       setRecipes(parsedRecipes)
       console.log('Recipes set successfully:', parsedRecipes)
+
+      // Reset pantry change detection since recipes are updated
+      setPantryChanged(false)
+      setChangeType('')
 
       // Increment daily recipe search counter
       incrementRecipeSearchesToday()
@@ -911,6 +966,36 @@ If canMake is true, "need" should be empty. If false, list what's missing with q
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-2xl p-4">
               <p className="text-red-600 text-center">{error}</p>
+            </div>
+          )}
+
+          {/* Pantry Change Notification */}
+          {pantryChanged && recipes.length > 0 && (
+            <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                    <span className="text-orange-600 text-sm">🔄</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-orange-900">
+                      {changeType === 'added' && 'Ingredients added'}
+                      {changeType === 'removed' && 'Ingredients removed'}
+                      {changeType === 'changed' && 'Ingredients changed'}
+                    </p>
+                    <p className="text-orange-700 text-sm">
+                      Please click "Find New Recipes" to get updated results
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={refreshRecipes}
+                  className="bg-orange-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-orange-600 transition-colors flex items-center gap-2"
+                >
+                  <Search size={16} />
+                  Find New Recipes
+                </button>
+              </div>
             </div>
           )}
 
