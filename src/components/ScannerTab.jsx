@@ -92,6 +92,10 @@ function ScannerTab({ addToHistory, pantry, setPantry, ingredients, setIngredien
   const tapTimeoutRef = useRef(null)
   const fileInputRef = useRef(null)
   const cameraInputRef = useRef(null)
+  
+  // Drag and drop state
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragCounter, setDragCounter] = useState(0)
 
   // Load settings from localStorage
   useEffect(() => {
@@ -491,6 +495,45 @@ ${settings.unsureIngredients
     setPantry([...pantry, ...simplifiedIngredients])
   }
 
+  // Drag and drop handlers
+  const handleDragEnter = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragCounter(prev => prev + 1)
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setIsDragging(true)
+    }
+  }
+
+  const handleDragLeave = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragCounter(prev => prev - 1)
+    if (dragCounter === 1) {
+      setIsDragging(false)
+    }
+  }
+
+  const handleDragOver = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+  }
+
+  const handleDrop = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    setIsDragging(false)
+    setDragCounter(0)
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0]
+      if (file.type.startsWith('image/')) {
+        handleFileSelect({ target: { files: [file] } })
+      }
+    }
+  }
+
   const addChatMessage = (message) => {
     console.log('Adding chat message:', message)
     setChatMessages(prev => {
@@ -767,14 +810,39 @@ ${settings.unsureIngredients
           </button>
           <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={handleFileSelect} className="hidden" />
 
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="w-full bg-white text-gray-700 rounded-2xl p-6 flex items-center justify-center gap-3 active:bg-gray-50 transition-colors border border-gray-200"
+          {/* Drag and Drop Upload Area */}
+          <div
+            className={`relative w-full rounded-2xl border-2 border-dashed transition-all ${
+              isDragging 
+                ? 'border-blue-500 bg-blue-50' 
+                : 'border-gray-300 bg-white hover:border-gray-400'
+            }`}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
           >
-            <Upload size={28} />
-            <span className="text-lg font-semibold">Upload Photo</span>
-          </button>
-          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
+            {isDragging && (
+              <div className="absolute inset-0 bg-blue-500/10 rounded-2xl flex items-center justify-center z-10">
+                <div className="text-center">
+                  <Upload size={48} className="text-blue-500 mx-auto mb-2 animate-bounce" />
+                  <p className="text-blue-700 font-semibold text-lg">Drop your photo here!</p>
+                  <p className="text-blue-600 text-sm">Release to upload</p>
+                </div>
+              </div>
+            )}
+            
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full bg-transparent text-gray-700 rounded-2xl p-6 flex items-center justify-center gap-3 active:bg-gray-50 transition-colors"
+            >
+              <Upload size={28} />
+              <span className="text-lg font-semibold">
+                {isDragging ? 'Drop to upload' : 'Upload Photo'}
+              </span>
+            </button>
+            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
+          </div>
 
           {/* Manual Ingredient Entry */}
           <div className="bg-white rounded-2xl p-4">
