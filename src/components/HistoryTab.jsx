@@ -1,6 +1,6 @@
 import { Clock, ChevronRight, Sparkles, Trash2, AlertCircle, RefreshCw } from 'lucide-react'
 
-function HistoryTab({ history }) {
+function HistoryTab({ history, setHistory }) {
   const formatDate = (dateString) => {
     try {
       const date = new Date(dateString)
@@ -45,6 +45,14 @@ function HistoryTab({ history }) {
     return result
   }
 
+  const deleteHistory = () => {
+    if (window.confirm('Are you sure you want to delete all scan history? This action cannot be undone.')) {
+      setHistory([])
+      // Clear from localStorage for persistence
+      localStorage.removeItem('scanHistory')
+    }
+  }
+
   const addTestHistory = () => {
     // This is just for testing - in production this wouldn't be needed
     console.log('Current history:', history)
@@ -62,8 +70,21 @@ function HistoryTab({ history }) {
   return (
     <div className="p-4">
       <div className="safe-area-top pt-4 pb-6">
-        <h1 className="text-3xl font-bold text-gray-900 animate-slideDown">History</h1>
-        <p className="text-gray-500 mt-1 animate-slideDown animation-delay-100">Your previous ingredient scans</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 animate-slideDown">History</h1>
+            <p className="text-gray-500 mt-1 animate-slideDown animation-delay-100">Your previous ingredient scans</p>
+          </div>
+          {history.length > 0 && (
+            <button
+              onClick={deleteHistory}
+              className="bg-red-100 text-red-700 p-3 rounded-xl hover:bg-red-200 transition-colors animate-slideDown animation-delay-200"
+              title="Delete all history"
+            >
+              <Trash2 size={20} />
+            </button>
+          )}
+        </div>
       </div>
 
       {history.length === 0 ? (

@@ -208,7 +208,7 @@ function App() {
           />
         )
       case 'history':
-        return <HistoryTab history={scanHistory} />
+        return <HistoryTab history={scanHistory} setHistory={setScanHistory} />
       case 'profile':
         return <ProfileTab preferences={preferences} setPreferences={setPreferences} onRedoOnboarding={handleRedoOnboarding} isAdmin={isAdmin} setIsAdmin={setIsAdmin} />
       default:
