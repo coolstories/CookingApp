@@ -822,27 +822,39 @@ ${settings.unsureIngredients
             onDragOver={handleDragOver}
             onDrop={handleDrop}
           >
-            {isDragging && (
-              <div className="absolute inset-0 bg-blue-500/10 rounded-2xl flex items-center justify-center z-10">
-                <div className="text-center">
-                  <Upload size={48} className="text-blue-500 mx-auto mb-2 animate-bounce" />
-                  <p className="text-blue-700 font-semibold text-lg">Drop your photo here!</p>
-                  <p className="text-blue-600 text-sm">Release to upload</p>
-                </div>
-              </div>
-            )}
-            
             <button
               onClick={() => fileInputRef.current?.click()}
               className="w-full bg-transparent text-gray-700 rounded-2xl p-6 flex items-center justify-center gap-3 active:bg-gray-50 transition-colors"
             >
               <Upload size={28} />
-              <span className="text-lg font-semibold">
-                {isDragging ? 'Drop to upload' : 'Upload Photo'}
-              </span>
+              <span className="text-lg font-semibold">Upload Photo</span>
             </button>
             <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
           </div>
+
+          {/* Full-screen Drag Overlay */}
+          {isDragging && (
+            <div
+              className="fixed inset-0 bg-blue-500/20 backdrop-blur-sm z-50 flex items-center justify-center"
+              onDragEnter={handleDragEnter}
+              onDragLeave={handleDragLeave}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+            >
+              <div className="bg-white rounded-3xl p-12 shadow-2xl border-4 border-blue-500 max-w-md mx-4">
+                <div className="text-center">
+                  <Upload size={64} className="text-blue-500 mx-auto mb-4 animate-bounce" />
+                  <h2 className="text-2xl font-bold text-blue-700 mb-2">Drop your photo here!</h2>
+                  <p className="text-blue-600 text-lg mb-4">Release to upload your image</p>
+                  <div className="flex items-center justify-center gap-2 text-blue-500">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse delay-75"></div>
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse delay-150"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Manual Ingredient Entry */}
           <div className="bg-white rounded-2xl p-4">
