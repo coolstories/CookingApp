@@ -9,7 +9,7 @@ function getScansToday() {
   return date === today ? count : 0
 }
 
-function ProfileTab({ preferences, setPreferences, onRedoOnboarding, isAdmin, setIsAdmin }) {
+function ProfileTab({ preferences, setPreferences, onRedoOnboarding, isAdmin, setIsAdmin, cookingLevel, setCookingLevel }) {
   const [selectedMenu, setSelectedMenu] = useState(null)
   const [userName, setUserName] = useState('Guest User')
   const [avatarImage, setAvatarImage] = useState(null)
@@ -42,6 +42,9 @@ function ProfileTab({ preferences, setPreferences, onRedoOnboarding, isAdmin, se
 
       const storedNotifications = localStorage.getItem('appNotifications')
       if (storedNotifications) setNotifications(JSON.parse(storedNotifications))
+
+      const storedCookingLevel = localStorage.getItem('cookingLevel')
+      if (storedCookingLevel) setCookingLevel(storedCookingLevel)
     } catch (error) {
       console.warn('Error loading settings from localStorage:', error)
     }
@@ -58,6 +61,15 @@ function ProfileTab({ preferences, setPreferences, onRedoOnboarding, isAdmin, se
       console.warn('Error saving avatar to localStorage:', error)
     }
   }, [avatarImage])
+
+  // Save cooking level to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('cookingLevel', cookingLevel)
+    } catch (error) {
+      console.warn('Error saving cooking level to localStorage:', error)
+    }
+  }, [cookingLevel])
 
   const handleAvatarChange = (event) => {
     const file = event.target.files[0]
@@ -346,6 +358,20 @@ function ProfileTab({ preferences, setPreferences, onRedoOnboarding, isAdmin, se
                       {settings.unsureIngredients ? 'Enabled' : 'Disabled'}
                     </span>
                   </label>
+                </div>
+
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <p className="text-sm font-medium text-gray-900">Cooking Level</p>
+                  <p className="text-xs text-gray-500 mt-1 mb-2">Affects recipe detail and complexity</p>
+                  <select 
+                    value={cookingLevel}
+                    onChange={(e) => setCookingLevel(e.target.value)}
+                    className="w-full mt-2 p-2 border border-gray-200 rounded-lg text-sm"
+                  >
+                    <option value="beginner">Beginner - Simple instructions</option>
+                    <option value="intermediate">Intermediate - Balanced detail</option>
+                    <option value="advanced">Advanced - Detailed techniques</option>
+                  </select>
                 </div>
 
                 <div className="p-3 bg-gray-50 rounded-lg">

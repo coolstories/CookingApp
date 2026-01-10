@@ -4,6 +4,7 @@ import { Camera, ChefHat, Heart, Settings, Sparkles, ChevronRight, X, ChevronLef
 function Onboarding({ onComplete, onSkip }) {
   const [currentScreen, setCurrentScreen] = useState(0)
   const [userName, setUserName] = useState('')
+  const [cookingLevel, setCookingLevel] = useState('intermediate')
   const [isAnimating, setIsAnimating] = useState(false)
   const [showConfetti, setShowConfetti] = useState(false)
   const touchStartX = useRef(0)
@@ -22,6 +23,15 @@ function Onboarding({ onComplete, onSkip }) {
     },
     {
       id: 1,
+      title: "Your Cooking Level",
+      subtitle: "Personalize recipe complexity",
+      description: "Tell us about your cooking experience to get recipes that match your skill level.",
+      icon: Utensils,
+      bgColor: "from-green-500 to-emerald-600",
+      hasCookingLevel: true
+    },
+    {
+      id: 2,
       title: "Scan Ingredients",
       subtitle: "AI-powered detection",
       description: "Take photos of ingredients and let AI recognize everything automatically.",
@@ -35,7 +45,7 @@ function Onboarding({ onComplete, onSkip }) {
       ]
     },
     {
-      id: 2,
+      id: 3,
       title: "Discover Recipes",
       subtitle: "Personalized meal suggestions",
       description: "Get 5 tailored recipes using ingredients you actually have.",
@@ -49,7 +59,7 @@ function Onboarding({ onComplete, onSkip }) {
       ]
     },
     {
-      id: 3,
+      id: 4,
       title: "Interactive Cooking",
       subtitle: "Step-by-step guidance",
       description: "Follow recipes with timers, progress tracking, and celebrations.",
@@ -63,7 +73,7 @@ function Onboarding({ onComplete, onSkip }) {
       ]
     },
     {
-      id: 4,
+      id: 5,
       title: "Customize Experience",
       subtitle: "Make it yours",
       description: "Set preferences, upload avatar, and personalize your cooking journey.",
@@ -77,7 +87,7 @@ function Onboarding({ onComplete, onSkip }) {
       ]
     },
     {
-      id: 5,
+      id: 6,
       title: `Ready to Cook, ${userName || 'Chef'}!`,
       subtitle: "Your AI kitchen companion awaits",
       description: "You're all set to create amazing meals with ingredients you have. Here's what you can do:",
@@ -108,6 +118,7 @@ function Onboarding({ onComplete, onSkip }) {
       if (userName.trim()) {
         localStorage.setItem('userName', userName.trim())
       }
+      localStorage.setItem('cookingLevel', cookingLevel)
       onComplete(userName)
     }
   }
@@ -250,6 +261,47 @@ function Onboarding({ onComplete, onSkip }) {
                 className="w-full px-4 py-3 rounded-xl bg-white/20 backdrop-blur-sm text-white placeholder-white/60 border border-white/30 focus:outline-none focus:border-white/60 focus:bg-white/30 transition-all text-center"
                 autoFocus
               />
+            </div>
+          )}
+
+          {/* Cooking Level Selection */}
+          {currentScreenData.hasCookingLevel && (
+            <div className="mb-8 space-y-3">
+              <div className="grid grid-cols-1 gap-3">
+                <button
+                  onClick={() => setCookingLevel('beginner')}
+                  className={`p-4 rounded-xl border-2 transition-all text-left ${
+                    cookingLevel === 'beginner'
+                      ? 'bg-white/30 border-white text-white'
+                      : 'bg-white/10 border-white/30 text-white/80 hover:bg-white/20'
+                  }`}
+                >
+                  <div className="font-semibold mb-1">🌱 Beginner</div>
+                  <div className="text-sm opacity-90">Simple, easy-to-follow recipes</div>
+                </button>
+                <button
+                  onClick={() => setCookingLevel('intermediate')}
+                  className={`p-4 rounded-xl border-2 transition-all text-left ${
+                    cookingLevel === 'intermediate'
+                      ? 'bg-white/30 border-white text-white'
+                      : 'bg-white/10 border-white/30 text-white/80 hover:bg-white/20'
+                  }`}
+                >
+                  <div className="font-semibold mb-1">👨‍🍳 Intermediate</div>
+                  <div className="text-sm opacity-90">Balanced recipes with some detail</div>
+                </button>
+                <button
+                  onClick={() => setCookingLevel('advanced')}
+                  className={`p-4 rounded-xl border-2 transition-all text-left ${
+                    cookingLevel === 'advanced'
+                      ? 'bg-white/30 border-white text-white'
+                      : 'bg-white/10 border-white/30 text-white/80 hover:bg-white/20'
+                  }`}
+                >
+                  <div className="font-semibold mb-1">🔥 Advanced</div>
+                  <div className="text-sm opacity-90">Detailed professional techniques</div>
+                </button>
+              </div>
             </div>
           )}
 

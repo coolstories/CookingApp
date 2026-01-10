@@ -90,7 +90,48 @@ function RecipeChecklist({ isOpen, steps, currentStep }) {
   )
 }
 
-function RecipesTab({ pantry, preferences, recipes, setRecipes, setPantry }) {
+function RecipesTab({ pantry, preferences, recipes, setRecipes, setPantry, cookingLevel }) {
+  const getCookingLevelInstructions = () => {
+    switch (cookingLevel) {
+      case 'beginner':
+        return `IMPORTANT: Make steps SIMPLE and easy to follow for beginner cooks:
+- Use basic cooking techniques everyone can understand
+- Keep instructions clear and straightforward
+- Include helpful tips for common mistakes
+- Use simple vocabulary (avoid complex culinary terms)
+- Focus on basic timing like "cook for 5-7 minutes" instead of exact seconds
+- Include visual cues like "until golden brown" or "until soft"
+- Keep steps to a reasonable number (3-5 steps max)
+- Add helpful notes like "don't worry if it's not perfect"`
+
+      case 'intermediate':
+        return `IMPORTANT: Make steps balanced for intermediate cooks:
+- Include moderate detail with specific timing
+- Use common cooking techniques with some precision
+- Include helpful tips and variations
+- Balance between simplicity and detail
+- Include timing like "cook for 5-7 minutes" with visual cues
+- 5-7 steps per recipe with clear progression
+- Include technique explanations where helpful`
+
+      case 'advanced':
+        return `IMPORTANT: Make steps EXTREMELY detailed with specific timing and professional cooking instructions:
+- EVERY step MUST include specific timing (e.g., "for 2 minutes", "for 30 seconds", "for 15 minutes")
+- NEVER use vague instructions like "Melt butter" - always specify "Melt butter in microwave for 45 seconds on medium power"
+- Include exact temperatures (e.g., "Preheat oven to 375°F", "Heat pan to medium-high heat (375°F)")
+- Include visual cues (e.g., "until golden brown and crispy", "until bubbles form", "until slightly browned")
+- Include specific techniques (e.g., "Stir continuously for 3 minutes to prevent burning", "Fold gently for 1 minute")
+- Include pan sizes and heat levels (e.g., "Use a 10-inch skillet over medium-high heat", "Preheat 8-inch non-stick pan")
+- Include preparation details (e.g., "Dice onions into 1/4-inch pieces", "Mince garlic finely", "Slice chicken into 1/2-inch strips")
+- Include microwave times (e.g., "Microwave on high for 45 seconds", "Heat in 30-second intervals")
+- Include stovetop timing (e.g., "Sauté for 4-5 minutes until tender", "Simmer for 10 minutes")
+- Include oven timing (e.g., "Bake at 375°F for 20-25 minutes", "Roast for 15 minutes at 400°F")
+- CRITICAL: Every single step must have specific timing. No step should be without a time component`
+
+      default:
+        return `IMPORTANT: Make steps balanced for general cooking:`
+    }
+  }
   const [loading, setLoading] = useState(false)
   const [selectedRecipe, setSelectedRecipe] = useState(null)
   const [detailedRecipe, setDetailedRecipe] = useState(null)
@@ -429,22 +470,10 @@ CRITICAL RULES:
 
 Suggest exactly 5 delicious recipes using ONLY available ingredients. Each recipe must have a different meal type: one breakfast, one lunch, one dinner, one snack, and one dessert.
 
-IMPORTANT: Make steps EXTREMELY detailed with specific timing and professional cooking instructions:
-- EVERY step MUST include specific timing (e.g., "for 2 minutes", "for 30 seconds", "for 15 minutes")
-- NEVER use vague instructions like "Melt butter" - always specify "Melt butter in microwave for 45 seconds on medium power"
-- Include exact temperatures (e.g., "Preheat oven to 375°F", "Heat pan to medium-high heat (375°F)")
-- Include visual cues (e.g., "until golden brown and crispy", "until bubbles form", "until slightly browned")
-- Include specific techniques (e.g., "Stir continuously for 3 minutes to prevent burning", "Fold gently for 1 minute")
-- Include pan sizes and heat levels (e.g., "Use a 10-inch skillet over medium-high heat", "Preheat 8-inch non-stick pan")
-- Include preparation details (e.g., "Dice onions into 1/4-inch pieces", "Mince garlic finely", "Slice chicken into 1/2-inch strips")
-- Include microwave times (e.g., "Microwave on high for 45 seconds", "Heat in 30-second intervals")
-- Include stovetop timing (e.g., "Sauté for 4-5 minutes until tender", "Simmer for 10 minutes")
-- Include oven timing (e.g., "Bake at 375°F for 20-25 minutes", "Roast for 15 minutes at 400°F")
-
-CRITICAL: Every single step must have specific timing. No step should be without a time component.
+${getCookingLevelInstructions()}
 
 Return ONLY a JSON array:
-[{"name": "Recipe Name", "description": "Brief description", "time": "30 mins", "servings": "4", "difficulty": "Easy", "mealType": "Breakfast", "ingredients": ["2 cups item1", "1 cup item2"], "tips": ["Tip 1"], "steps": ["Melt butter in microwave for 45 seconds on medium power until completely liquid", "Sauté onions in 10-inch skillet over medium heat for 5 minutes until translucent", "Bake at 375°F for 20 minutes until golden brown and crispy"]}]`
+[{"name": "Recipe Name", "description": "Brief description", "time": "30 mins", "servings": "4", "difficulty": "Easy", "mealType": "Breakfast", "ingredients": ["2 cups item1", "1 cup item2"], "tips": ["Tip 1"], "steps": ["Step 1", "Step 2", "Step 3"]}]`
             }]
           })
         }),

@@ -27,6 +27,7 @@ function App() {
     { id: 'healthy', name: 'Healthy Eating', emoji: '💪', description: 'Nutritious meals', enabled: false },
   ])
   const [isAdmin, setIsAdmin] = useState(false) // Admin state for unlimited chat
+  const [cookingLevel, setCookingLevel] = useState('intermediate') // Cooking level for recipe complexity
 
   // Check if onboarding should be shown
   useEffect(() => {
@@ -74,6 +75,9 @@ function App() {
 
       const storedIsAdmin = localStorage.getItem('isAdmin')
       if (storedIsAdmin) setIsAdmin(JSON.parse(storedIsAdmin))
+
+      const storedCookingLevel = localStorage.getItem('cookingLevel')
+      if (storedCookingLevel) setCookingLevel(storedCookingLevel)
     } catch (error) {
       console.warn('Error loading data from localStorage:', error)
     }
@@ -131,6 +135,14 @@ function App() {
 
   useEffect(() => {
     try {
+      localStorage.setItem('cookingLevel', cookingLevel)
+    } catch (error) {
+      console.warn('Error saving cookingLevel to localStorage:', error)
+    }
+  }, [cookingLevel])
+
+  useEffect(() => {
+    try {
       localStorage.setItem('imagePreview', imagePreview || '')
     } catch (error) {
       console.warn('Error saving imagePreview to localStorage:', error)
@@ -155,6 +167,11 @@ function App() {
       if (name) {
         localStorage.setItem('userName', name)
         setUserName(name)
+      }
+      // Load cooking level from onboarding
+      const storedCookingLevel = localStorage.getItem('cookingLevel')
+      if (storedCookingLevel) {
+        setCookingLevel(storedCookingLevel)
       }
       setShowOnboarding(false)
     } catch (error) {
@@ -205,12 +222,13 @@ function App() {
             recipes={recipes}
             setRecipes={setRecipes}
             setPantry={setPantry}
+            cookingLevel={cookingLevel}
           />
         )
       case 'history':
         return <HistoryTab history={scanHistory} setHistory={setScanHistory} />
       case 'profile':
-        return <ProfileTab preferences={preferences} setPreferences={setPreferences} onRedoOnboarding={handleRedoOnboarding} isAdmin={isAdmin} setIsAdmin={setIsAdmin} />
+        return <ProfileTab preferences={preferences} setPreferences={setPreferences} onRedoOnboarding={handleRedoOnboarding} isAdmin={isAdmin} setIsAdmin={setIsAdmin} cookingLevel={cookingLevel} setCookingLevel={setCookingLevel} />
       default:
         return <ScannerTab addToHistory={addToHistory} pantry={pantry} setPantry={setPantry} />
     }
