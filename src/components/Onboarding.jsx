@@ -224,15 +224,16 @@ function Onboarding({ onComplete, onSkip }) {
 
         {/* Main Card */}
         <div 
-          className={`bg-gradient-to-br ${currentScreenData.bgColor} rounded-3xl p-16 text-white shadow-2xl transform transition-all duration-300 cursor-default h-[600px] flex flex-col justify-between ${
+          className={`bg-gradient-to-br ${currentScreenData.bgColor} rounded-3xl text-white shadow-2xl transform transition-all duration-300 cursor-default ${
             isAnimating ? 'scale-95 opacity-50' : 'scale-100 opacity-100'
+          } ${
+            currentScreenData.id === 1 ? 'p-12' : 'p-16'
           }`}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         >
-          <div className="flex flex-col h-full">
-            {/* Icon */}
-            <div className="flex justify-center mb-6">
+          {/* Icon */}
+          <div className="flex justify-center mb-6">
             <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/30">
               <Icon size={40} className="text-white" />
             </div>
@@ -331,11 +332,12 @@ function Onboarding({ onComplete, onSkip }) {
               ))}
             </div>
           )}
-          </div>
 
           {/* Navigation */}
-          <div className="flex justify-between items-center mt-8">
-            {currentScreen > 0 && (
+          <div className={`flex items-center ${
+            currentScreen === screens.length - 1 ? 'justify-center' : 'justify-between'
+          }`}>
+            {currentScreen < screens.length - 1 && (
               <button
                 onClick={(e) => {
                   e.stopPropagation()
