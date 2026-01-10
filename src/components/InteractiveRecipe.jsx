@@ -1,11 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
-import { Clock, Users, Flame, Play, Pause, RotateCcw, CheckCircle2, Circle, ChefHat, Timer, Volume2, VolumeX, X, AlertCircle, Thermometer, Eye, Hand, Utensils, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react'
+import { Clock, Users, Flame, Play, Pause, RotateCcw, CheckCircle2, Circle, ChefHat, Timer, X, AlertCircle, Thermometer, Eye, Hand, Utensils, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react'
 
 function InteractiveRecipe({ recipe, onClose }) {
   const [currentStep, setCurrentStep] = useState(0)
   const [completedSteps, setCompletedSteps] = useState([])
   const [timers, setTimers] = useState({})
-  const [isMuted, setIsMuted] = useState(false)
   const [activeTimer, setActiveTimer] = useState(null)
   const [showConfetti, setShowConfetti] = useState(false)
   const [stepNotes, setStepNotes] = useState({})
@@ -27,7 +26,7 @@ function InteractiveRecipe({ recipe, onClose }) {
   // Play timer sound
   const playTimerSound = () => {
     try {
-      if (audioRef.current && !isMuted) {
+      if (audioRef.current) {
         audioRef.current.play().catch(() => {})
       }
     } catch (error) {
@@ -331,17 +330,9 @@ function InteractiveRecipe({ recipe, onClose }) {
         <div className="sticky top-0 bg-white border-b border-gray-200 p-4 z-10">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-2xl font-bold text-gray-900">{recipe.name || 'Recipe'}</h1>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setIsMuted(!isMuted)}
-                className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
-              >
-                {isMuted ? <VolumeX size={20} className="text-gray-600" /> : <Volume2 size={20} className="text-gray-600" />}
-              </button>
-              <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-                <X size={24} />
-              </button>
-            </div>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+              <X size={24} />
+            </button>
           </div>
 
           {/* Progress Bar */}
