@@ -1,4 +1,4 @@
-import { Clock, ChevronRight, Sparkles, Trash2, AlertCircle, RefreshCw } from 'lucide-react'
+import { Clock, ChevronRight, Sparkles, Trash2, AlertCircle } from 'lucide-react'
 
 function HistoryTab({ history, setHistory }) {
   const formatDate = (dateString) => {
@@ -53,20 +53,6 @@ function HistoryTab({ history, setHistory }) {
     }
   }
 
-  const addTestHistory = () => {
-    // This is just for testing - in production this wouldn't be needed
-    console.log('Current history:', history)
-    console.log('History length:', history.length)
-    
-    // Log localStorage contents
-    try {
-      const stored = localStorage.getItem('scanHistory')
-      console.log('localStorage scanHistory:', stored ? JSON.parse(stored) : 'None')
-    } catch (error) {
-      console.warn('localStorage read error:', error)
-    }
-  }
-
   return (
     <div className="p-4">
       <div className="safe-area-top pt-4 pb-6">
@@ -100,15 +86,6 @@ function HistoryTab({ history, setHistory }) {
             <Sparkles size={16} className="animate-pulse-slow" />
             <span className="text-sm font-medium">Try scanning something!</span>
           </div>
-          
-          {/* Debug button - remove in production */}
-          <button
-            onClick={addTestHistory}
-            className="mt-4 px-4 py-2 bg-gray-100 rounded-lg text-xs text-gray-600 hover:bg-gray-200 transition-colors"
-          >
-            <RefreshCw size={12} className="inline mr-1" />
-            Debug History
-          </button>
         </div>
       ) : (
         <div className="space-y-3">
