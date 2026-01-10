@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ChefHat, Loader2, Clock, Users, Flame, Search, X, Filter, CheckCircle2, Circle, Globe, BookOpen, ExternalLink } from 'lucide-react'
+import { ChefHat, Loader2, Clock, Users, Flame, Search, X, Filter, CheckCircle2, Circle, Globe, BookOpen, ExternalLink, Heart } from 'lucide-react'
 import InteractiveRecipe from './InteractiveRecipe'
 
 const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY
@@ -90,7 +90,7 @@ function RecipeChecklist({ isOpen, steps, currentStep }) {
   )
 }
 
-function RecipesTab({ pantry, preferences, recipes, setRecipes, setPantry, cookingLevel }) {
+function RecipesTab({ pantry, preferences, recipes, setRecipes, setPantry, cookingLevel, favorites, setFavorites }) {
   const getCookingLevelInstructions = () => {
     switch (cookingLevel) {
       case 'beginner':
@@ -132,6 +132,19 @@ function RecipesTab({ pantry, preferences, recipes, setRecipes, setPantry, cooki
         return `IMPORTANT: Make steps balanced for general cooking:`
     }
   }
+
+  const isFavorite = (recipeId) => {
+    return favorites.some(recipe => recipe.id === recipeId)
+  }
+
+  const toggleFavorite = (recipe) => {
+    if (isFavorite(recipe.id)) {
+      setFavorites(prev => prev.filter(fav => fav.id !== recipe.id))
+    } else {
+      setFavorites(prev => [recipe, ...prev])
+    }
+  }
+
   const [loading, setLoading] = useState(false)
   const [selectedRecipe, setSelectedRecipe] = useState(null)
   const [detailedRecipe, setDetailedRecipe] = useState(null)
@@ -361,7 +374,10 @@ Return as JSON:
         ]
       }
 
-      setUniversalSearchResults([recipeWithSources])
+      setUniversalSearchResults([{
+        ...recipeWithSources,
+        id: `universal-${Date.now()}`
+      }])
     } catch (err) {
       console.error('Universal search error:', err)
       setError('Failed to search recipes. Please try again.')
@@ -517,8 +533,15 @@ Return ONLY a JSON array:
 
       await new Promise(resolve => setTimeout(resolve, 500))
       setShowChecklist(false)
-      setRecipes(parsedRecipes)
-      console.log('Recipes set successfully:', parsedRecipes)
+      
+      // Add unique IDs to recipes
+      const recipesWithIds = parsedRecipes.map((recipe, index) => ({
+        ...recipe,
+        id: `recipe-${Date.now()}-${index}`
+      }))
+      
+      setRecipes(recipesWithIds)
+      console.log('Recipes set successfully:', recipesWithIds)
 
       // Reset pantry change detection since recipes are updated
       setPantryChanged(false)
@@ -1116,9 +1139,25 @@ If canMake is true, "need" should be empty. If false, list what's missing with q
                     </div>
                   </div>
                   <p className="text-gray-600 text-sm mb-3 line-clamp-2">{recipe.description}</p>
-                  <div className="flex items-center gap-4 text-sm text-gray-500">
-                    <div className="flex items-center gap-1 whitespace-nowrap"><Clock size={16} />{recipe.time}</div>
-                    <div className="flex items-center gap-1 whitespace-nowrap"><Users size={16} />{recipe.servings}</div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4 text-sm text-gray-500">
+                      <div className="flex items-center gap-1 whitespace-nowrap"><Clock size={16} />{recipe.time}</div>
+                      <div className="flex items-center gap-1 whitespace-nowrap"><Users size={16} />{recipe.servings}</div>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toggleFavorite(recipe)
+                      }}
+                      className={`p-2 rounded-full transition-colors ${
+                        isFavorite(recipe.id) 
+                          ? 'bg-pink-100 text-pink-600 hover:bg-pink-200' 
+                          : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                      }`}
+                      title={isFavorite(recipe.id) ? 'Remove from favorites' : 'Add to favorites'}
+                    >
+                      <Heart size={16} className={isFavorite(recipe.id) ? 'fill-current' : ''} />
+                    </button>
                   </div>
                 </div>
               ))}

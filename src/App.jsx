@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Home, History, User, ChefHat } from 'lucide-react'
+import { Home, History, User, ChefHat, Heart } from 'lucide-react'
 import ScannerTab from './components/ScannerTab'
 import HistoryTab from './components/HistoryTab'
 import ProfileTab from './components/ProfileTab'
 import RecipesTab from './components/RecipesTab'
+import FavoritesTab from './components/FavoritesTab'
 import Onboarding from './components/Onboarding'
 
 function App() {
@@ -11,6 +12,7 @@ function App() {
   const [scanHistory, setScanHistory] = useState([])
   const [pantry, setPantry] = useState([])
   const [recipes, setRecipes] = useState([])
+  const [favorites, setFavorites] = useState([])
   const [ingredients, setIngredients] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
   const [showOnboarding, setShowOnboarding] = useState(false)
@@ -60,6 +62,9 @@ function App() {
       const storedRecipes = localStorage.getItem('recipes')
       if (storedRecipes) setRecipes(JSON.parse(storedRecipes))
 
+      const storedFavorites = localStorage.getItem('favorites')
+      if (storedFavorites) setFavorites(JSON.parse(storedFavorites))
+
       const storedPreferences = localStorage.getItem('preferences')
       if (storedPreferences) setPreferences(JSON.parse(storedPreferences))
 
@@ -107,6 +112,14 @@ function App() {
       console.warn('Error saving recipes to localStorage:', error)
     }
   }, [recipes])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('favorites', JSON.stringify(favorites))
+    } catch (error) {
+      console.warn('Error saving favorites to localStorage:', error)
+    }
+  }, [favorites])
 
   useEffect(() => {
     try {
@@ -195,6 +208,7 @@ function App() {
   const tabs = [
     { id: 'scanner', label: 'Scanner', icon: Home },
     { id: 'recipes', label: 'Recipes', icon: ChefHat },
+    { id: 'favorites', label: 'Favorites', icon: Heart },
     { id: 'history', label: 'History', icon: History },
     { id: 'profile', label: 'Profile', icon: User },
   ]
@@ -223,8 +237,12 @@ function App() {
             setRecipes={setRecipes}
             setPantry={setPantry}
             cookingLevel={cookingLevel}
+            favorites={favorites}
+            setFavorites={setFavorites}
           />
         )
+      case 'favorites':
+        return <FavoritesTab favorites={favorites} setFavorites={setFavorites} />
       case 'history':
         return <HistoryTab history={scanHistory} setHistory={setScanHistory} />
       case 'profile':
