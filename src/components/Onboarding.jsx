@@ -330,7 +330,7 @@ function Onboarding({ onComplete, onSkip }) {
           {/* Preferences Selection */}
           {currentScreenData.hasPreferences && (
             <div className="mb-8 space-y-3">
-              <div className="grid grid-cols-1 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 {preferences.map((pref) => (
                   <button
                     key={pref.id}
@@ -345,21 +345,17 @@ function Onboarding({ onComplete, onSkip }) {
                         : 'bg-white/10 border-white/30 text-white/80 hover:bg-white/20'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-semibold mb-1 flex items-center gap-2">
-                          <span className="text-lg">{pref.emoji}</span>
-                          {pref.name}
-                        </div>
-                        <div className="text-sm opacity-90">{pref.description}</div>
-                      </div>
-                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                    <div className="flex flex-col items-center text-center">
+                      <div className="text-2xl mb-1">{pref.emoji}</div>
+                      <div className="font-semibold text-sm mb-1">{pref.name}</div>
+                      <div className="text-xs opacity-90 leading-tight">{pref.description}</div>
+                      <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center mt-2 ${
                         pref.enabled 
                           ? 'bg-white border-white' 
                           : 'border-white/60'
                       }`}>
                         {pref.enabled && (
-                          <div className="w-2 h-2 bg-pink-500 rounded-full"></div>
+                          <div className="w-1.5 h-1.5 bg-pink-500 rounded-full"></div>
                         )}
                       </div>
                     </div>
