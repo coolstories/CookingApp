@@ -10,10 +10,6 @@ function Onboarding({ onComplete, onSkip }) {
     { id: 'vegan', name: 'Vegan', emoji: '🌱', description: 'No animal products', enabled: false },
     { id: 'glutenfree', name: 'Gluten-Free', emoji: '🌾', description: 'No gluten', enabled: false },
     { id: 'dairyfree', name: 'Dairy-Free', emoji: '🥛', description: 'No dairy products', enabled: false },
-    { id: 'sweettooth', name: 'Sweet Tooth', emoji: '🍰', description: 'Love desserts', enabled: false },
-    { id: 'spicy', name: 'Spicy Food', emoji: '🌶️', description: 'Love spicy dishes', enabled: false },
-    { id: 'lowcarb', name: 'Low Carb', emoji: '🥩', description: 'Reduce carbohydrates', enabled: false },
-    { id: 'healthy', name: 'Healthy Eating', emoji: '💪', description: 'Nutritious meals', enabled: false },
   ])
   const [isAnimating, setIsAnimating] = useState(false)
   const [showConfetti, setShowConfetti] = useState(false)
@@ -44,7 +40,7 @@ function Onboarding({ onComplete, onSkip }) {
       id: 2,
       title: "Your Preferences",
       subtitle: "Customize your experience",
-      description: "Select your dietary preferences and cooking style to get personalized recipe recommendations.",
+      description: "Select your main dietary preferences. You can always change these or add more preferences later in settings!",
       icon: Heart,
       bgColor: "from-pink-500 to-rose-600",
       hasPreferences: true
@@ -138,7 +134,20 @@ function Onboarding({ onComplete, onSkip }) {
         localStorage.setItem('userName', userName.trim())
       }
       localStorage.setItem('cookingLevel', cookingLevel)
-      localStorage.setItem('preferences', JSON.stringify(preferences))
+      
+      // Create full preferences array with onboarding selections
+      const fullPreferences = [
+        { id: 'vegetarian', name: 'Vegetarian', emoji: '🥬', description: 'No meat or fish', enabled: preferences.find(p => p.id === 'vegetarian')?.enabled || false },
+        { id: 'vegan', name: 'Vegan', emoji: '🌱', description: 'No animal products', enabled: preferences.find(p => p.id === 'vegan')?.enabled || false },
+        { id: 'glutenfree', name: 'Gluten-Free', emoji: '🌾', description: 'No gluten', enabled: preferences.find(p => p.id === 'glutenfree')?.enabled || false },
+        { id: 'dairyfree', name: 'Dairy-Free', emoji: '🥛', description: 'No dairy products', enabled: preferences.find(p => p.id === 'dairyfree')?.enabled || false },
+        { id: 'sweettooth', name: 'Sweet Tooth', emoji: '🍰', description: 'Love desserts', enabled: false },
+        { id: 'spicy', name: 'Spicy Food', emoji: '🌶️', description: 'Love spicy dishes', enabled: false },
+        { id: 'lowcarb', name: 'Low Carb', emoji: '🥩', description: 'Reduce carbohydrates', enabled: false },
+        { id: 'healthy', name: 'Healthy Eating', emoji: '💪', description: 'Nutritious meals', enabled: false },
+      ]
+      
+      localStorage.setItem('preferences', JSON.stringify(fullPreferences))
       onComplete(userName)
     }
   }
@@ -329,7 +338,7 @@ function Onboarding({ onComplete, onSkip }) {
 
           {/* Preferences Selection */}
           {currentScreenData.hasPreferences && (
-            <div className="mb-8 space-y-3">
+            <div className="mb-4 space-y-2">
               <div className="grid grid-cols-2 gap-2">
                 {preferences.map((pref) => (
                   <button
@@ -339,23 +348,23 @@ function Onboarding({ onComplete, onSkip }) {
                         p.id === pref.id ? { ...p, enabled: !p.enabled } : p
                       ))
                     }}
-                    className={`p-3 rounded-xl border-2 transition-all text-left ${
+                    className={`p-2 rounded-xl border-2 transition-all text-left ${
                       pref.enabled
                         ? 'bg-white/30 border-white text-white'
                         : 'bg-white/10 border-white/30 text-white/80 hover:bg-white/20'
                     }`}
                   >
                     <div className="flex flex-col items-center text-center">
-                      <div className="text-2xl mb-1">{pref.emoji}</div>
+                      <div className="text-xl mb-1">{pref.emoji}</div>
                       <div className="font-semibold text-sm mb-1">{pref.name}</div>
                       <div className="text-xs opacity-90 leading-tight">{pref.description}</div>
-                      <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center mt-2 ${
+                      <div className={`w-3 h-3 rounded-full border-2 flex items-center justify-center mt-1 ${
                         pref.enabled 
                           ? 'bg-white border-white' 
                           : 'border-white/60'
                       }`}>
                         {pref.enabled && (
-                          <div className="w-1.5 h-1.5 bg-pink-500 rounded-full"></div>
+                          <div className="w-1 h-1 bg-pink-500 rounded-full"></div>
                         )}
                       </div>
                     </div>
