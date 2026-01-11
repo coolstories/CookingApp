@@ -187,6 +187,7 @@ function App() {
         setCookingLevel(storedCookingLevel)
       }
       setShowOnboarding(false)
+      setActiveTab('scanner') // Navigate to scanner after onboarding
     } catch (error) {
       console.warn('Error saving onboarding completion:', error)
     }
@@ -196,6 +197,7 @@ function App() {
     try {
       localStorage.setItem('hasCompletedOnboarding', 'true')
       setShowOnboarding(false)
+      setActiveTab('scanner') // Navigate to scanner after skipping onboarding
     } catch (error) {
       console.warn('Error saving onboarding skip:', error)
     }
