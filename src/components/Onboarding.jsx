@@ -5,6 +5,16 @@ function Onboarding({ onComplete, onSkip }) {
   const [currentScreen, setCurrentScreen] = useState(0)
   const [userName, setUserName] = useState('')
   const [cookingLevel, setCookingLevel] = useState('intermediate')
+  const [preferences, setPreferences] = useState([
+    { id: 'vegetarian', name: 'Vegetarian', emoji: '🥬', description: 'No meat or fish', enabled: false },
+    { id: 'vegan', name: 'Vegan', emoji: '🌱', description: 'No animal products', enabled: false },
+    { id: 'glutenfree', name: 'Gluten-Free', emoji: '🌾', description: 'No gluten', enabled: false },
+    { id: 'dairyfree', name: 'Dairy-Free', emoji: '🥛', description: 'No dairy products', enabled: false },
+    { id: 'sweettooth', name: 'Sweet Tooth', emoji: '🍰', description: 'Love desserts', enabled: false },
+    { id: 'spicy', name: 'Spicy Food', emoji: '🌶️', description: 'Love spicy dishes', enabled: false },
+    { id: 'lowcarb', name: 'Low Carb', emoji: '🥩', description: 'Reduce carbohydrates', enabled: false },
+    { id: 'healthy', name: 'Healthy Eating', emoji: '💪', description: 'Nutritious meals', enabled: false },
+  ])
   const [isAnimating, setIsAnimating] = useState(false)
   const [showConfetti, setShowConfetti] = useState(false)
   const touchStartX = useRef(0)
@@ -32,6 +42,15 @@ function Onboarding({ onComplete, onSkip }) {
     },
     {
       id: 2,
+      title: "Your Preferences",
+      subtitle: "Customize your experience",
+      description: "Select your dietary preferences and cooking style to get personalized recipe recommendations.",
+      icon: Heart,
+      bgColor: "from-pink-500 to-rose-600",
+      hasPreferences: true
+    },
+    {
+      id: 3,
       title: "Scan Ingredients",
       subtitle: "AI-powered detection",
       description: "Take photos of ingredients and let AI recognize everything automatically.",
@@ -45,7 +64,7 @@ function Onboarding({ onComplete, onSkip }) {
       ]
     },
     {
-      id: 3,
+      id: 4,
       title: "Discover Recipes",
       subtitle: "Personalized meal suggestions",
       description: "Get 5 tailored recipes using ingredients you actually have.",
@@ -59,7 +78,7 @@ function Onboarding({ onComplete, onSkip }) {
       ]
     },
     {
-      id: 4,
+      id: 5,
       title: "Interactive Cooking",
       subtitle: "Step-by-step guidance",
       description: "Follow recipes with timers, progress tracking, and celebrations.",
@@ -73,7 +92,7 @@ function Onboarding({ onComplete, onSkip }) {
       ]
     },
     {
-      id: 5,
+      id: 6,
       title: "Customize Experience",
       subtitle: "Make it yours",
       description: "Set preferences, upload avatar, and personalize your cooking journey.",
@@ -87,7 +106,7 @@ function Onboarding({ onComplete, onSkip }) {
       ]
     },
     {
-      id: 6,
+      id: 7,
       title: `Ready to Cook, ${userName || 'Chef'}!`,
       subtitle: "Your AI kitchen companion awaits",
       description: "You're all set to create amazing meals with ingredients you have. Here's what you can do:",
@@ -119,6 +138,7 @@ function Onboarding({ onComplete, onSkip }) {
         localStorage.setItem('userName', userName.trim())
       }
       localStorage.setItem('cookingLevel', cookingLevel)
+      localStorage.setItem('preferences', JSON.stringify(preferences))
       onComplete(userName)
     }
   }
@@ -303,6 +323,48 @@ function Onboarding({ onComplete, onSkip }) {
                   <div className="font-semibold mb-1">🔥 Advanced</div>
                   <div className="text-sm opacity-90">Detailed professional techniques</div>
                 </button>
+              </div>
+            </div>
+          )}
+
+          {/* Preferences Selection */}
+          {currentScreenData.hasPreferences && (
+            <div className="mb-8 space-y-3">
+              <div className="grid grid-cols-1 gap-2">
+                {preferences.map((pref) => (
+                  <button
+                    key={pref.id}
+                    onClick={() => {
+                      setPreferences(prev => prev.map(p => 
+                        p.id === pref.id ? { ...p, enabled: !p.enabled } : p
+                      ))
+                    }}
+                    className={`p-3 rounded-xl border-2 transition-all text-left ${
+                      pref.enabled
+                        ? 'bg-white/30 border-white text-white'
+                        : 'bg-white/10 border-white/30 text-white/80 hover:bg-white/20'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-semibold mb-1 flex items-center gap-2">
+                          <span className="text-lg">{pref.emoji}</span>
+                          {pref.name}
+                        </div>
+                        <div className="text-sm opacity-90">{pref.description}</div>
+                      </div>
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                        pref.enabled 
+                          ? 'bg-white border-white' 
+                          : 'border-white/60'
+                      }`}>
+                        {pref.enabled && (
+                          <div className="w-2 h-2 bg-pink-500 rounded-full"></div>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                ))}
               </div>
             </div>
           )}

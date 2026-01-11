@@ -186,6 +186,11 @@ function App() {
       if (storedCookingLevel) {
         setCookingLevel(storedCookingLevel)
       }
+      // Load preferences from onboarding
+      const storedPreferences = localStorage.getItem('preferences')
+      if (storedPreferences) {
+        setPreferences(JSON.parse(storedPreferences))
+      }
       setShowOnboarding(false)
       setActiveTab('scanner') // Navigate to scanner after onboarding
     } catch (error) {
