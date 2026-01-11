@@ -247,7 +247,7 @@ function Onboarding({ onComplete, onSkip }) {
           className={`bg-gradient-to-br ${currentScreenData.bgColor} rounded-3xl text-white shadow-2xl transform transition-all duration-300 cursor-default ${
             isAnimating ? 'scale-95 opacity-50' : 'scale-100 opacity-100'
           } ${
-            currentScreenData.id === 1 ? 'p-12' : 'p-16'
+            currentScreenData.id === 1 || currentScreenData.id === 2 ? 'p-12' : 'p-16'
           }`}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
