@@ -64,7 +64,7 @@ const COMMON_INGREDIENTS = [
   'Baking Powder', 'Baking Soda', 'Yeast', 'Nuts', 'Almonds', 'Walnuts', 'Coconut', 'Avocado', 'Corn', 'Peas', 'Green Beans'
 ]
 
-function ScannerTab({ addToHistory, pantry, setPantry, ingredients, setIngredients, imagePreview, setImagePreview, isAdmin = false }) {
+function ScannerTab({ addToHistory, pantry, setPantry, ingredients, setIngredients, imagePreview, setImagePreview, isAdmin = false, setActiveTab }) {
   console.log('ScannerTab isAdmin:', isAdmin)
   const [image, setImage] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -83,7 +83,7 @@ function ScannerTab({ addToHistory, pantry, setPantry, ingredients, setIngredien
   const [showConfirmation, setShowConfirmation] = useState(false)
   const [confirmedIngredients, setConfirmedIngredients] = useState([])
   const [uncertainIngredients, setUncertainIngredients] = useState([])
-  const [settings, setSettings] = useState({ unsureIngredients: false })
+  const [settings, setSettings] = useState({ unsureIngredients: false, showAskAI: false })
   const [adminMode, setAdminMode] = useState(false)
   const [tapCount, setTapCount] = useState(0)
   const [showAdminPassword, setShowAdminPassword] = useState(false)
@@ -96,6 +96,7 @@ function ScannerTab({ addToHistory, pantry, setPantry, ingredients, setIngredien
   // Drag and drop state
   const [isDragging, setIsDragging] = useState(false)
   const [dragCounter, setDragCounter] = useState(0)
+  const [showAlmostRecipes, setShowAlmostRecipes] = useState(false)
 
   // Load settings from localStorage
   useEffect(() => {
@@ -106,6 +107,31 @@ function ScannerTab({ addToHistory, pantry, setPantry, ingredients, setIngredien
       }
     } catch (error) {
       console.warn('Error loading settings from localStorage:', error)
+    }
+  }, [])
+
+  // Listen for settings changes
+  useEffect(() => {
+    const handleStorageChange = () => {
+      try {
+        const storedSettings = localStorage.getItem('appSettings')
+        if (storedSettings) {
+          setSettings(JSON.parse(storedSettings))
+        }
+      } catch (error) {
+        console.warn('Error updating settings from localStorage:', error)
+      }
+    }
+
+    // Listen for storage changes
+    window.addEventListener('storage', handleStorageChange)
+    
+    // Also check periodically in case the same tab updates settings
+    const interval = setInterval(handleStorageChange, 1000)
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      clearInterval(interval)
     }
   }, [])
 
@@ -478,6 +504,12 @@ ${settings.unsureIngredients
     
     if (!pantry.some(p => p.name.toLowerCase() === simplifiedName.toLowerCase())) {
       setPantry([...pantry, simplifiedIngredient])
+      
+      // Show success message with navigation hint
+      setTimeout(() => {
+        setError('✅ Ingredient stored! Go to Recipes tab to find recipes with your ingredients.')
+        setTimeout(() => setError(null), 5000)
+      }, 100)
     }
   }
 
@@ -493,6 +525,12 @@ ${settings.unsureIngredients
     }))
     
     setPantry([...pantry, ...simplifiedIngredients])
+    
+    // Show success message with navigation hint
+    setTimeout(() => {
+      setError('✅ Ingredients stored! Go to Recipes tab to find recipes with your ingredients.')
+      setTimeout(() => setError(null), 5000)
+    }, 100)
   }
 
   // Drag and drop handlers
@@ -1011,18 +1049,60 @@ ${settings.unsureIngredients
           )}
 
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-2xl p-4">
-              <p className="text-red-600 text-center">{error}</p>
+            <div className={`rounded-2xl p-4 ${
+              error.includes('✅') 
+                ? 'bg-green-50 border border-green-200' 
+                : 'bg-red-50 border border-red-200'
+            }`}>
+              <p className={`text-center ${
+                error.includes('✅') 
+                  ? 'text-green-700 font-medium' 
+                  : 'text-red-600'
+              }`}>{error}</p>
+              {error.includes('Recipes tab') && (
+                <div className="mt-3 text-center">
+                  <button 
+                    onClick={() => {
+                      // Call the setActiveTab function to switch to recipes tab
+                      if (setActiveTab) {
+                        setActiveTab('recipes')
+                      }
+                    }}
+                    className="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors inline-flex items-center gap-2"
+                  >
+                    <span>🍳</span>
+                    Go to Recipes
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
           {ingredients && (
             <div className="bg-white rounded-2xl p-5 space-y-4">
+              {/* Prominent Store All Section */}
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-semibold text-green-900 text-lg">Add to Pantry</h4>
+                    <p className="text-green-700 text-sm">Store all {ingredients.ingredients.length} ingredient{ingredients.ingredients.length !== 1 ? 's' : ''} for future recipes</p>
+                  </div>
+                  <button 
+                    onClick={storeAllIngredients} 
+                    className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-2 py-1 rounded-full font-medium hover:from-green-600 hover:to-emerald-700 transition-all transform hover:scale-105 shadow-lg flex items-center gap-1 text-xs"
+                    style={{ marginLeft: '-5px' }}
+                  >
+                    <Plus size={12} />
+                    Store All
+                  </button>
+                </div>
+              </div>
+              
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold text-gray-900 text-lg">Found {ingredients.ingredients.length} Ingredient{ingredients.ingredients.length !== 1 ? 's' : ''}</h3>
-                <button onClick={storeAllIngredients} className="bg-green-500 text-white px-3 py-1 rounded-lg text-sm font-medium hover:bg-green-600">
-                  Store All
-                </button>
+                <div className="text-xs text-gray-500">
+                  Or store individually below
+                </div>
               </div>
               
               {!areIngredientsSufficientForRecipes(ingredients.ingredients) && (
@@ -1069,7 +1149,7 @@ ${settings.unsureIngredients
           )}
 
           {/* Chat Section - Show after scan */}
-          {imagePreview && !showChat && (
+          {imagePreview && !showChat && settings.showAskAI && (
             <div className="bg-white rounded-2xl p-5">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-semibold text-gray-900 text-lg flex items-center gap-2">
@@ -1293,6 +1373,64 @@ ${settings.unsureIngredients
               >
                 Cancel
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Almost Recipes Modal */}
+      {showAlmostRecipes && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-3xl">🍳</span>
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900">Almost Recipes</h3>
+              <p className="text-gray-500 text-sm mt-1">Creative ideas with your ingredients</p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-orange-50 rounded-xl p-4">
+                <h4 className="font-semibold text-orange-900 mb-2">What you can make:</h4>
+                <div className="space-y-2 text-sm text-orange-800">
+                  <p>• <strong>Simple sides:</strong> Roasted vegetables, basic salads</p>
+                  <p>• <strong>Snacks:</strong> Ingredient combinations, simple plates</p>
+                  <p>• <strong>Partial meals:</strong> Add 1-2 more ingredients for complete dishes</p>
+                  <p>• <strong>Flavor bases:</strong> Start building complex flavors</p>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 rounded-xl p-4">
+                <h4 className="font-semibold text-blue-900 mb-2">Suggestions:</h4>
+                <div className="space-y-2 text-sm text-blue-800">
+                  <p>• Add a protein like eggs, chicken, or beans</p>
+                  <p>• Include grains like rice, pasta, or bread</p>
+                  <p>• Stock up on basic spices and oils</p>
+                  <p>• Try adding cheese or nuts for extra flavor</p>
+                </div>
+              </div>
+              
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setShowAlmostRecipes(false)
+                    // Navigate to Recipes tab
+                    if (setActiveTab) {
+                      setActiveTab('recipes')
+                    }
+                  }}
+                  className="flex-1 bg-blue-500 text-white rounded-xl p-3 font-semibold hover:bg-blue-600 transition-colors"
+                >
+                  Go to Recipes
+                </button>
+                <button
+                  onClick={() => setShowAlmostRecipes(false)}
+                  className="flex-1 bg-gray-100 text-gray-900 rounded-xl p-3 font-semibold hover:bg-gray-200 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -20,7 +20,8 @@ function ProfileTab({ preferences, setPreferences, onRedoOnboarding, isAdmin, se
   const [settings, setSettings] = useState({
     theme: 'Light',
     units: 'Metric (g, ml)',
-    unsureIngredients: false
+    unsureIngredients: false,
+    showAskAI: false
   })
   const [scansToday, setScansToday] = useState(getScansToday())
 
@@ -372,6 +373,22 @@ function ProfileTab({ preferences, setPreferences, onRedoOnboarding, isAdmin, se
                     <option value="intermediate">Intermediate - Balanced detail</option>
                     <option value="advanced">Advanced - Detailed techniques</option>
                   </select>
+                </div>
+
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <p className="text-sm font-medium text-gray-900">AI Photo Analysis</p>
+                  <p className="text-xs text-gray-500 mt-1 mb-2">Show "Ask AI about this photo" options in chat</p>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={settings.showAskAI}
+                      onChange={(e) => setSettings({...settings, showAskAI: e.target.checked})}
+                      className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700">
+                      {settings.showAskAI ? 'Enabled' : 'Disabled'}
+                    </span>
+                  </label>
                 </div>
               </div>
             )}

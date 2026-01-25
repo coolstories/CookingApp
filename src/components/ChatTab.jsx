@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Send, Camera, Image, MessageCircle, User, Bot, Loader2, X, Clock, ChefHat, Lightbulb, HelpCircle, Maximize2, Sparkles, Zap, ChevronUp } from 'lucide-react'
+import { Send, Camera, Image, MessageCircle, User, Bot, Loader2, X, Clock, ChefHat, Lightbulb, HelpCircle, Maximize2, Sparkles, Zap, ChevronUp, Settings, Toggle } from 'lucide-react'
 
 const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY
 const DAILY_CHAT_LIMIT = 5
@@ -36,6 +36,14 @@ function ChatTab({ scanHistory, isAdmin = false }) {
   const [messagesRemaining, setMessagesRemaining] = useState(isAdmin ? 999 : DAILY_CHAT_LIMIT - getChatMessagesToday())
   const [modalImage, setModalImage] = useState(null)
   const [isTyping, setIsTyping] = useState(false)
+  const [showAskAI, setShowAskAI] = useState(() => {
+    try {
+      const settings = JSON.parse(localStorage.getItem('appSettings') || '{}')
+      return settings.showAskAI || false
+    } catch {
+      return false
+    }
+  })
   const fileInputRef = useRef(null)
   const messagesEndRef = useRef(null)
   const messagesContainerRef = useRef(null)
@@ -65,6 +73,28 @@ function ChatTab({ scanHistory, isAdmin = false }) {
     if (container) {
       container.addEventListener('scroll', handleScroll)
       return () => container.removeEventListener('scroll', handleScroll)
+    }
+  }, [])
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      try {
+        const settings = JSON.parse(localStorage.getItem('appSettings') || '{}')
+        setShowAskAI(settings.showAskAI || false)
+      } catch {
+        setShowAskAI(false)
+      }
+    }
+
+    // Listen for storage changes
+    window.addEventListener('storage', handleStorageChange)
+    
+    // Also check periodically in case the same tab updates settings
+    const interval = setInterval(handleStorageChange, 1000)
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      clearInterval(interval)
     }
   }, [])
 
@@ -279,7 +309,7 @@ function ChatTab({ scanHistory, isAdmin = false }) {
               
               {/* Quick Actions */}
               <div className="space-y-3 w-full max-w-xs">
-                {scanHistory.length > 0 && (
+                {showAskAI && scanHistory.length > 0 && (
                   <button
                     onClick={useLastScan}
                     className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl p-3 flex items-center justify-center gap-2 hover:from-green-600 hover:to-emerald-700 transition-all transform hover:scale-105 shadow-lg"
@@ -405,7 +435,7 @@ function ChatTab({ scanHistory, isAdmin = false }) {
               <Image size={20} />
             </button>
 
-            {scanHistory.length > 0 && (
+            {scanHistory.length > 0 && showAskAI && (
               <button
                 onClick={useLastScan}
                 className="p-3 text-gray-400 hover:text-gray-600 transition-colors"

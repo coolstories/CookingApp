@@ -233,6 +233,7 @@ function App() {
             imagePreview={imagePreview}
             setImagePreview={setImagePreview}
             isAdmin={isAdmin}
+            setActiveTab={setActiveTab}
           />
         )
       case 'recipes':
