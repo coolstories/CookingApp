@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react'
-import { Send, Camera, Image, MessageCircle, User, Bot, Loader2, X, Clock, ChefHat, Lightbulb, HelpCircle } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { Send, Camera, Image, MessageCircle, User, Bot, Loader2, X, Clock, ChefHat, Lightbulb, HelpCircle, Maximize2, Sparkles, Zap, ChevronUp } from 'lucide-react'
 
 const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY
 const DAILY_CHAT_LIMIT = 5
@@ -34,12 +34,36 @@ function ChatTab({ scanHistory, isAdmin = false }) {
   const [selectedImage, setSelectedImage] = useState(null)
   const [chatImage, setChatImage] = useState(null)
   const [messagesRemaining, setMessagesRemaining] = useState(isAdmin ? 999 : DAILY_CHAT_LIMIT - getChatMessagesToday())
+  const [modalImage, setModalImage] = useState(null)
+  const [isTyping, setIsTyping] = useState(false)
   const fileInputRef = useRef(null)
   const messagesEndRef = useRef(null)
+  const messagesContainerRef = useRef(null)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
+
+  const scrollToTop = () => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = 0
+    }
+  }
+
+  const handleScroll = () => {
+    if (messagesContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current
+      // Show/hide scroll to top button based on scroll position
+    }
+  }
+
+  useEffect(() => {
+    const container = messagesContainerRef.current
+    if (container) {
+      container.addEventListener('scroll', handleScroll)
+      return () => container.removeEventListener('scroll', handleScroll)
+    }
+  }, [])
 
   const addMessage = (message) => {
     setMessages(prev => [...prev, message])
@@ -96,6 +120,7 @@ function ChatTab({ scanHistory, isAdmin = false }) {
 
     const userMessage = inputMessage.trim() || 'Tell me about this image'
     setLoading(true)
+    setIsTyping(true)
 
     // Add user message
     addMessage({
@@ -173,6 +198,7 @@ function ChatTab({ scanHistory, isAdmin = false }) {
       })
     } finally {
       setLoading(false)
+      setIsTyping(false)
     }
   }
 
@@ -186,32 +212,44 @@ function ChatTab({ scanHistory, isAdmin = false }) {
     return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
 
+  const openImageModal = (imageSrc) => {
+    setModalImage(imageSrc)
+  }
+
+  const closeModal = () => {
+    setModalImage(null)
+  }
+
   const suggestedQuestions = [
-    { icon: ChefHat, text: "What can I cook with this?" },
-    { icon: Lightbulb, text: "Give me recipe ideas" },
-    { icon: HelpCircle, text: "How should I store this?" },
-    { icon: Clock, text: "How long will this last?" }
+    { icon: Sparkles, text: "What can I cook with this?", color: "purple" },
+    { icon: Zap, text: "Give me recipe ideas", color: "yellow" },
+    { icon: HelpCircle, text: "How should I store this?", color: "blue" },
+    { icon: Clock, text: "How long will this last?", color: "green" }
   ]
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
+    <>
+      <div className="flex flex-col h-full bg-gradient-to-br from-blue-50 to-purple-50 relative">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 p-4">
+      <div className="bg-white/90 backdrop-blur-sm border-b border-gray-200 p-4 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="bg-blue-100 rounded-full p-2">
-              <MessageCircle size={24} className="text-blue-600" />
+            <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-full p-2 shadow-lg">
+              <MessageCircle size={24} className="text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">AI Cooking Chat</h2>
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                AI Cooking Chat
+                <Sparkles size={16} className="text-yellow-500" />
+              </h2>
               <p className="text-sm text-gray-500">
-                {isAdmin ? 'Unlimited messages' : `${messagesRemaining}/5 messages today`}
+                {isAdmin ? '✨ Unlimited messages' : `${messagesRemaining}/5 messages today`}
               </p>
             </div>
           </div>
           <button
             onClick={clearChat}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-gray-400 hover:text-gray-600 transition-colors"
           >
             <X size={20} />
           </button>
@@ -219,13 +257,17 @@ function ChatTab({ scanHistory, isAdmin = false }) {
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div 
+        ref={messagesContainerRef}
+        className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth"
+        style={{ scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 #f1f5f9' }}
+      >
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center py-8">
-            <div className="bg-blue-100 rounded-full p-6 mb-4">
-              <MessageCircle size={48} className="text-blue-600" />
+            <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-full p-6 mb-4 shadow-xl">
+              <MessageCircle size={48} className="text-white" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">Start a conversation!</h3>
+            <h3 className="text-lg font-semibold text-gray-700 mb-2">Start a delicious conversation! 🍳</h3>
             <p className="text-gray-500 mb-6 max-w-sm">Chat with AI about ingredients, recipes, or upload a food photo for analysis</p>
             
             {/* Quick Actions */}
@@ -233,33 +275,33 @@ function ChatTab({ scanHistory, isAdmin = false }) {
               {scanHistory.length > 0 && (
                 <button
                   onClick={useLastScan}
-                  className="w-full bg-green-500 text-white rounded-xl p-3 flex items-center justify-center gap-2 hover:bg-green-600 transition-colors"
+                  className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl p-3 flex items-center justify-center gap-2 hover:from-green-600 hover:to-emerald-700 transition-all transform hover:scale-105 shadow-lg"
                 >
                   <Image size={20} />
-                  Use Last Scanned Photo
+                  Chat about Last Photo
                 </button>
               )}
               
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full bg-blue-500 text-white rounded-xl p-3 flex items-center justify-center gap-2 hover:bg-blue-600 transition-colors"
+                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl p-3 flex items-center justify-center gap-2 hover:from-blue-600 hover:to-purple-700 transition-all transform hover:scale-105 shadow-lg"
               >
                 <Camera size={20} />
-                Upload Photo
+                Upload Food Photo
               </button>
             </div>
 
             {/* Suggested Questions */}
             <div className="mt-8 w-full max-w-sm">
-              <p className="text-sm text-gray-500 mb-3">Try asking:</p>
+              <p className="text-sm text-gray-500 mb-3 font-medium">Try asking:</p>
               <div className="grid grid-cols-2 gap-2">
                 {suggestedQuestions.map((suggestion, idx) => (
                   <button
                     key={idx}
                     onClick={() => setInputMessage(suggestion.text)}
-                    className="bg-white border border-gray-200 rounded-lg p-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-1"
+                    className={`bg-white border border-gray-200 rounded-lg p-2 text-xs text-gray-700 hover:bg-gray-50 transition-all hover:scale-105 flex items-center gap-1 shadow-sm hover:shadow-md`}
                   >
-                    <suggestion.icon size={12} />
+                    <suggestion.icon size={12} className={`text-${suggestion.color}-500`} />
                     {suggestion.text}
                   </button>
                 ))}
@@ -290,12 +332,18 @@ function ChatTab({ scanHistory, isAdmin = false }) {
                         : 'bg-white border border-gray-200 text-gray-900'
                     }`}>
                       {message.image && (
-                        <img
-                          src={message.image}
-                          alt="Shared image"
-                          className="rounded-lg mb-2 max-w-full h-auto"
-                          style={{ maxHeight: '200px' }}
-                        />
+                        <div className="relative group">
+                          <img
+                            src={message.image}
+                            alt="Shared image"
+                            className="rounded-lg mb-2 max-w-full h-auto cursor-pointer transition-transform hover:scale-105"
+                            style={{ maxHeight: '200px' }}
+                            onClick={() => openImageModal(message.image)}
+                          />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 rounded-lg mb-2 transition-colors flex items-center justify-center">
+                            <Maximize2 size={20} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                        </div>
                       )}
                       <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                     </div>
@@ -312,7 +360,7 @@ function ChatTab({ scanHistory, isAdmin = false }) {
       </div>
 
       {/* Input Area */}
-      <div className="bg-white border-t border-gray-200 p-4">
+      <div className="bg-white/90 backdrop-blur-sm border-t border-gray-200 p-4 shadow-lg">
         {/* Current Image Display */}
         {selectedImage && (
           <div className="mb-3 flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
@@ -372,7 +420,7 @@ function ChatTab({ scanHistory, isAdmin = false }) {
           <button
             onClick={sendMessage}
             disabled={loading || (!inputMessage.trim() && !chatImage)}
-            className="p-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="p-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105 shadow-lg"
           >
             {loading ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
           </button>
@@ -383,8 +431,55 @@ function ChatTab({ scanHistory, isAdmin = false }) {
             {messagesRemaining === 0 ? 'Daily limit reached' : `${messagesRemaining} message remaining today`}
           </p>
         )}
+        {/* Typing Indicator */}
+        {isTyping && (
+          <div className="absolute bottom-20 left-4 flex items-center gap-2">
+            <div className="bg-gray-200 rounded-full p-2">
+              <Bot size={16} className="text-gray-600" />
+            </div>
+            <div className="bg-white border border-gray-200 rounded-2xl px-4 py-2">
+              <div className="flex gap-1">
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Scroll to Top Button */}
+        <button
+          onClick={scrollToTop}
+          className="absolute bottom-20 right-4 bg-white shadow-lg rounded-full p-2 hover:bg-gray-50 transition-colors"
+          title="Scroll to top"
+        >
+          <ChevronUp size={20} className="text-gray-600" />
+        </button>
       </div>
-    </div>
+
+      {/* Image Modal */}
+      {modalImage && (
+        <div 
+          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+          onClick={closeModal}
+        >
+          <div className="relative max-w-4xl max-h-full">
+            <img
+              src={modalImage}
+              alt="Enlarged view"
+              className="max-w-full max-h-full rounded-lg object-contain"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <button
+              onClick={closeModal}
+              className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full p-2 hover:bg-white transition-colors shadow-lg"
+            >
+              <X size={24} className="text-gray-800" />
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 
