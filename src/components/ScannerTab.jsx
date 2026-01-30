@@ -973,14 +973,34 @@ ${settings.unsureIngredients
             </button>
           </div>
 
-          <button
-            onClick={scanIngredients}
-            disabled={loading}
-            className="w-full bg-blue-500 text-white rounded-2xl p-5 flex items-center justify-center gap-3 disabled:opacity-50 shadow-lg shadow-blue-500/25"
-          >
-            {loading ? <Loader2 size={24} className="animate-spin" /> : <Sparkles size={24} />}
-            <span className="text-lg font-semibold">{loading ? 'Analyzing...' : 'Scan for Ingredients'}</span>
-          </button>
+          {!ingredients ? (
+            <button
+              onClick={scanIngredients}
+              disabled={loading}
+              className="w-full bg-blue-500 text-white rounded-2xl p-5 flex items-center justify-center gap-3 disabled:opacity-50 shadow-lg shadow-blue-500/25"
+            >
+              {loading ? <Loader2 size={24} className="animate-spin" /> : <Sparkles size={24} />}
+              <span className="text-lg font-semibold">{loading ? 'Analyzing...' : 'Scan for Ingredients'}</span>
+            </button>
+          ) : (
+            /* Store All Section - replaces scan button after ingredients are found */
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-semibold text-green-900 text-lg">Add to Pantry</h4>
+                  <p className="text-green-700 text-sm">Store all {ingredients.ingredients.length} ingredient{ingredients.ingredients.length !== 1 ? 's' : ''} for future recipes</p>
+                </div>
+                <button 
+                  onClick={storeAllIngredients} 
+                  className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-2 py-1 rounded-full font-medium hover:from-green-600 hover:to-emerald-700 transition-all transform hover:scale-105 shadow-lg flex items-center gap-1 text-xs"
+                  style={{ marginLeft: '-5px' }}
+                >
+                  <Plus size={12} />
+                  Store All
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Scanning Checklist Modal */}
           {showScanning && (
@@ -1080,28 +1100,10 @@ ${settings.unsureIngredients
 
           {ingredients && (
             <div className="bg-white rounded-2xl p-5 space-y-4">
-              {/* Prominent Store All Section */}
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-semibold text-green-900 text-lg">Add to Pantry</h4>
-                    <p className="text-green-700 text-sm">Store all {ingredients.ingredients.length} ingredient{ingredients.ingredients.length !== 1 ? 's' : ''} for future recipes</p>
-                  </div>
-                  <button 
-                    onClick={storeAllIngredients} 
-                    className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-2 py-1 rounded-full font-medium hover:from-green-600 hover:to-emerald-700 transition-all transform hover:scale-105 shadow-lg flex items-center gap-1 text-xs"
-                    style={{ marginLeft: '-5px' }}
-                  >
-                    <Plus size={12} />
-                    Store All
-                  </button>
-                </div>
-              </div>
-              
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold text-gray-900 text-lg">Found {ingredients.ingredients.length} Ingredient{ingredients.ingredients.length !== 1 ? 's' : ''}</h3>
                 <div className="text-xs text-gray-500">
-                  Or store individually below
+                  Store individually below
                 </div>
               </div>
               
